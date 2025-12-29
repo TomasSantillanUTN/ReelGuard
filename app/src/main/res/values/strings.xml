@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">ReelGuard</string>
+
+    <!-- Blocker Toasts -->
+    <string name="reel_blocker_toast">Basta de Reels por ahora 😅</string>
+    <string name="shorts_blocker_toast">Tiempo de Shorts terminado 😅</string>
+
+    <!-- HomeScreen: General -->
+    <string name="home_screen_title">ReelGuard</string>
+    <string name="home_screen_subtitle">Asistente de bienestar digital</string>
+    <string name="home_open_accessibility_button">Abrir configuración de accesibilidad</string>
+    <string name="home_privacy_disclaimer">La app no lee tu contenido, sólo la estructura de la interfaz para detectar Reels/Shorts.</string>
+
+    <!-- HomeScreen: Instagram Reels Card -->
+    <string name="reels_card_title">Instagram Reels</string>
+    <string name="reels_card_subtitle">Limita la cantidad de reels consecutivos</string>
+    <string name="reels_card_slider_label">Máximo de reels por sesión: %d</string>
+    <string name="reels_card_recommendation">Recomendado: entre 3 y 8 reels.</string>
+
+    <!-- HomeScreen: YouTube Shorts Card -->
+    <string name="shorts_card_title">YouTube Shorts</string>
+    <string name="shorts_card_subtitle">Limita el tiempo total en Shorts</string>
+    <string name="shorts_card_slider_label">Tiempo máximo: %d s</string>
+    <string name="shorts_card_recommendation">Recomendado: 30–90 segundos.</string>
+
+</resources>
