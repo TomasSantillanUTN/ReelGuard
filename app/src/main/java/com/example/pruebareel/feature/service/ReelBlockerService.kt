@@ -32,6 +32,11 @@ class ReelBlockerService : AccessibilityService() {
     private var reelCount = 0
     private var inReelViewer = false
 
+    // Variables para el "debouncing" y evitar el conteo múltiple
+    private var lastReelCountTime = 0L
+    private val DEBOUNCE_TIME_MS = 500L // 0.5 segundos
+
+
     /**
      * Se llama cuando el sistema conecta con el servicio.
      *
@@ -69,10 +74,15 @@ class ReelBlockerService : AccessibilityService() {
 
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 if (inReelViewer) {
-                    reelCount++
+                    val currentTime = System.currentTimeMillis()
+                    // Implementación de "debouncing" para el conteo
+                    if (currentTime - lastReelCountTime > DEBOUNCE_TIME_MS) {
+                        lastReelCountTime = currentTime
+                        reelCount++
 
-                    if (reelCount >= maxReels) {
-                        blockInstagram()
+                        if (reelCount >= maxReels) {
+                            blockInstagram()
+                        }
                     }
                 }
             }
