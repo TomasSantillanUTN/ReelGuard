@@ -3,47 +3,41 @@ package com.example.pruebareel.core.lock
 import com.example.pruebareel.data.preferences.SettingsRepository
 import kotlinx.coroutines.flow.first
 
+/** App sobre la que se aplica un bloqueo. Cada una tiene su propio estado. */
+enum class LockTarget { INSTAGRAM, YOUTUBE }
+
 /**
- * Gestiona la lógica de bloqueo persistente.
+ * Gestiona la lógica de bloqueo persistente para una app concreta.
  *
  * Utiliza [SettingsRepository] para persistir el estado del bloqueo y el timestamp de finalización,
  * lo que permite que el bloqueo sobreviva a reinicios del proceso o del sistema.
  */
-class LockManager(private val repository: SettingsRepository) {
+class LockManager(
+    private val repository: SettingsRepository,
+    private val target: LockTarget
+) {
 
-    /**
-     * Inicia un periodo de bloqueo.
-     *
-     * @param durationSeconds La duración del bloqueo en segundos.
-     */
+    /** Inicia un periodo de bloqueo de [durationSeconds] segundos. */
     suspend fun startLock(durationSeconds: Int) {
         val endTime = System.currentTimeMillis() + (durationSeconds * 1000L)
-        repository.setLockActive(true, endTime)
+        repository.setLockActive(target, true, endTime)
     }
 
-    /**
-     * Retorna el tiempo restante del bloqueo en milisegundos.
-     * Retorna 0 si no hay un bloqueo activo o si el tiempo ya expiró.
-     */
+    /** Retorna el tiempo restante del bloqueo en ms (0 si no hay bloqueo o ya expiró). */
     suspend fun getRemainingMillis(): Long {
         val settings = repository.settingsFlow.first()
-        if (!settings.isLockActive) return 0
-        
-        val remaining = settings.lockEndTimestamp - System.currentTimeMillis()
+        val (active, end) = when (target) {
+            LockTarget.INSTAGRAM -> settings.isLockActive to settings.lockEndTimestamp
+            LockTarget.YOUTUBE -> settings.ytLockActive to settings.ytLockEndTimestamp
+        }
+        if (!active) return 0
+        val remaining = end - System.currentTimeMillis()
         return if (remaining > 0) remaining else 0
     }
 
-    /**
-     * Verifica si el bloqueo está realmente activo comparando el timestamp actual con el de finalización.
-     */
-    suspend fun isLockActuallyActive(): Boolean {
-        return getRemainingMillis() > 0
-    }
+    suspend fun isLockActuallyActive(): Boolean = getRemainingMillis() > 0
 
-    /**
-     * Limpia el estado de bloqueo.
-     */
     suspend fun clearLock() {
-        repository.setLockActive(false, 0)
+        repository.setLockActive(target, false, 0)
     }
 }

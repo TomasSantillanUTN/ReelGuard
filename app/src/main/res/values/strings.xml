@@ -25,11 +25,17 @@
 
     <!-- HomeScreen: Lock Settings -->
     <string name="lock_settings_title">Ajustes de Bloqueo</string>
-    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio</string>
-    <string name="lock_settings_slider_label">Duración del bloqueo: %d s</string>
-    
+    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio (Instagram y YouTube)</string>
+    <string name="lock_settings_duration_label">Duración del bloqueo (máx. 10 minutos)</string>
+    <string name="lock_settings_minutes">Minutos</string>
+    <string name="lock_settings_seconds">Segundos</string>
+    <string name="lock_settings_current">Guardado: %1$d min %2$d s</string>
+    <string name="lock_settings_block_nav">Bloquear botones del sistema</string>
+    <string name="lock_settings_block_nav_desc">Si está marcado, no se puede usar Inicio, Volver ni Recientes hasta que termine la cuenta regresiva. Si no, podés salir y seguir usando el celular (la app sigue bloqueada).</string>
+
     <!-- Lock Overlay -->
     <string name="lock_overlay_message">Llegaste al límite de reels</string>
+    <string name="lock_overlay_message_shorts">Se terminó el tiempo de Shorts</string>
     <string name="lock_overlay_button">Volver al Home</string>
 
 </resources>

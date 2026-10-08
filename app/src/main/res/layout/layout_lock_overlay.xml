@@ -11,7 +11,7 @@
         android:id="@+id/tvMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Llegaste al límite de reels"
+        android:text="@string/lock_overlay_message"
         android:textColor="@android:color/white"
         android:textSize="24sp"
         android:textStyle="bold"
@@ -31,7 +31,7 @@
         android:id="@+id/btnReturnHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Volver al Home"
+        android:text="@string/lock_overlay_button"
         android:enabled="false" />
 
 </LinearLayout>

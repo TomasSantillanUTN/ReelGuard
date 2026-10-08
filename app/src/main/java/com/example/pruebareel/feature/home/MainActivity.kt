@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                     onShortsEnabledChange = homeViewModel::onShortsEnabledChange,
                     onShortsTimeChange = homeViewModel::onShortsTimeChange,
                     onLockDurationChange = homeViewModel::onLockDurationChange,
+                    onBlockNavigationChange = homeViewModel::onBlockNavigationChange,
                     onOpenAccessibilitySettings = {
                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     }

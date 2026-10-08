@@ -1,6 +1,19 @@
 package com.example.pruebareel.feature.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.pruebareel.data.preferences.SettingsRepository
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +48,7 @@ fun HomeScreen(
     onShortsEnabledChange: (Boolean) -> Unit,
     onShortsTimeChange: (Int) -> Unit,
     onLockDurationChange: (Int) -> Unit,
+    onBlockNavigationChange: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit
 ) {
     Scaffold(
@@ -53,7 +67,8 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
@@ -188,20 +203,37 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = stringResource(id = R.string.lock_settings_slider_label, state.lockDurationSeconds),
+                        text = stringResource(id = R.string.lock_settings_duration_label),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
-                    Slider(
-                        value = state.lockDurationSeconds.toFloat(),
-                        onValueChange = { onLockDurationChange(it.toInt()) },
-                        valueRange = 5f..60f,
-                        steps = 55
+                    LockDurationInput(
+                        savedSeconds = state.lockDurationSeconds,
+                        loaded = state.loaded,
+                        onSave = onLockDurationChange
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = state.blockNavigation,
+                            onCheckedChange = onBlockNavigationChange
+                        )
+                        Text(
+                            text = stringResource(id = R.string.lock_settings_block_nav),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    Text(
+                        text = stringResource(id = R.string.lock_settings_block_nav_desc),
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = stringResource(id = R.string.home_privacy_disclaimer),
@@ -209,4 +241,60 @@ fun HomeScreen(
             )
         }
     }
+}
+
+/**
+ * Input de duración del bloqueo en minutos + segundos (máximo 10 minutos).
+ * Se guarda al tocar "Guardar" para no pisar lo que el usuario está escribiendo.
+ */
+@Composable
+private fun LockDurationInput(
+    savedSeconds: Int,
+    loaded: Boolean,
+    onSave: (Int) -> Unit
+) {
+    var minutesText by remember(savedSeconds, loaded) { mutableStateOf((savedSeconds / 60).toString()) }
+    var secondsText by remember(savedSeconds, loaded) { mutableStateOf((savedSeconds % 60).toString()) }
+
+    val minutes = minutesText.toIntOrNull()
+    val seconds = secondsText.toIntOrNull()
+    val total = if (minutes != null && seconds != null) minutes * 60 + seconds else null
+    val isValid = total != null && seconds!! in 0..59 &&
+        total in SettingsRepository.MIN_LOCK_SECONDS..SettingsRepository.MAX_LOCK_SECONDS
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = minutesText,
+            onValueChange = { minutesText = it.filter(Char::isDigit).take(2) },
+            label = { Text(stringResource(id = R.string.lock_settings_minutes)) },
+            singleLine = true,
+            isError = !isValid,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.weight(1f)
+        )
+        OutlinedTextField(
+            value = secondsText,
+            onValueChange = { secondsText = it.filter(Char::isDigit).take(2) },
+            label = { Text(stringResource(id = R.string.lock_settings_seconds)) },
+            singleLine = true,
+            isError = !isValid,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.weight(1f)
+        )
+        Button(
+            onClick = { total?.let(onSave) },
+            enabled = isValid && total != savedSeconds
+        ) {
+            Text("Guardar")
+        }
+    }
+
+    Text(
+        text = stringResource(id = R.string.lock_settings_current, savedSeconds / 60, savedSeconds % 60),
+        style = MaterialTheme.typography.bodySmall
+    )
 }

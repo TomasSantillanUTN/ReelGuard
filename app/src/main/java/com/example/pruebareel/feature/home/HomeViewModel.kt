@@ -14,38 +14,24 @@ import kotlinx.coroutines.launch
 /**
  * Representa el estado de la interfaz de usuario para la pantalla [HomeScreen].
  *
- * @property reelsEnabled Indica si el bloqueo de Reels está activado.
- * @property reelsLimit El número máximo de Reels consecutivos permitidos.
- * @property shortsEnabled Indica si el bloqueo de Shorts de YouTube está activado.
- * @property shortsTimeSeconds El tiempo máximo (en segundos) permitido para ver Shorts.
- * @property lockDurationSeconds La duración del periodo de bloqueo en segundos.
+ * @property lockDurationSeconds La duración del periodo de bloqueo en segundos (máx. 10 min).
+ * @property blockNavigation Si la pantalla de bloqueo impide usar los botones del sistema.
+ * @property loaded `true` cuando ya se leyó la configuración guardada.
  */
 data class HomeUiState(
     val reelsEnabled: Boolean = true,
     val reelsLimit: Int = 5,
     val shortsEnabled: Boolean = true,
     val shortsTimeSeconds: Int = 5,
-    val lockDurationSeconds: Int = 10
+    val lockDurationSeconds: Int = 10,
+    val blockNavigation: Boolean = true,
+    val loaded: Boolean = false
 )
 
-/**
- * ViewModel para la pantalla [HomeScreen].
- *
- * Se encarga de:
- * - Exponer el estado de la UI [HomeUiState] a la pantalla.
- * - Recibir eventos de la UI y delegar el guardado de la configuración al [SettingsRepository].
- * - Mapear el modelo de datos [AppSettings] a un [HomeUiState] que la UI pueda consumir.
- */
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val settingsRepository = SettingsRepository(application)
 
-    /**
-     * Un [StateFlow] que emite el estado actual de la UI [HomeUiState].
-     *
-     * Se actualiza automáticamente cada vez que hay un cambio en la configuración guardada
-     * gracias a que está conectado al `settingsFlow` del [SettingsRepository].
-     */
     val uiState: StateFlow<HomeUiState> = settingsRepository.settingsFlow
         .map(::settingsToUi)
         .stateIn(
@@ -56,31 +42,31 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // ---------- Acciones desde la UI ----------
 
-    /** Actualiza el estado de activación del bloqueo de Reels. */
     fun onReelsEnabledChange(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setReelsEnabled(enabled)
     }
 
-    /** Actualiza el límite máximo de Reels. */
     fun onReelsLimitChange(newLimit: Int) = viewModelScope.launch {
         settingsRepository.setReelsLimit(newLimit)
     }
 
-    /** Actualiza el estado de activación del bloqueo de Shorts. */
     fun onShortsEnabledChange(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setShortsEnabled(enabled)
     }
 
-    /** Actualiza el tiempo máximo (en segundos) para ver Shorts. */
     fun onShortsTimeChange(seconds: Int) = viewModelScope.launch {
-        val clamped = seconds.coerceIn(5, 300) // Se asegura de que el valor esté en un rango razonable
+        val clamped = seconds.coerceIn(5, 300)
         settingsRepository.setShortsTimeMs(clamped * 1_000L)
     }
 
-    /** Actualiza la duración del periodo de bloqueo. */
+    /** Actualiza la duración del periodo de bloqueo (se limita a 5 s – 10 min). */
     fun onLockDurationChange(seconds: Int) = viewModelScope.launch {
-        val clamped = seconds.coerceIn(5, 60)
-        settingsRepository.setLockDuration(clamped)
+        settingsRepository.setLockDuration(seconds)
+    }
+
+    /** Activa/desactiva el bloqueo de los botones del sistema durante la cuenta regresiva. */
+    fun onBlockNavigationChange(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setBlockNavigation(enabled)
     }
 
     // ---------- Helpers ----------
@@ -91,7 +77,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             reelsLimit = settings.reelsLimit,
             shortsEnabled = settings.shortsEnabled,
             shortsTimeSeconds = (settings.shortsTimeMs / 1000L).toInt(),
-            lockDurationSeconds = settings.lockDurationSeconds
+            lockDurationSeconds = settings.lockDurationSeconds,
+            blockNavigation = settings.blockNavigation,
+            loaded = true
         )
     }
 }
