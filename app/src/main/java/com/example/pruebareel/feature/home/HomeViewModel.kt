@@ -18,12 +18,14 @@ import kotlinx.coroutines.launch
  * @property reelsLimit El número máximo de Reels consecutivos permitidos.
  * @property shortsEnabled Indica si el bloqueo de Shorts de YouTube está activado.
  * @property shortsTimeSeconds El tiempo máximo (en segundos) permitido para ver Shorts.
+ * @property lockDurationSeconds La duración del periodo de bloqueo en segundos.
  */
 data class HomeUiState(
     val reelsEnabled: Boolean = true,
     val reelsLimit: Int = 5,
     val shortsEnabled: Boolean = true,
-    val shortsTimeSeconds: Int = 5
+    val shortsTimeSeconds: Int = 5,
+    val lockDurationSeconds: Int = 10
 )
 
 /**
@@ -75,6 +77,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         settingsRepository.setShortsTimeMs(clamped * 1_000L)
     }
 
+    /** Actualiza la duración del periodo de bloqueo. */
+    fun onLockDurationChange(seconds: Int) = viewModelScope.launch {
+        val clamped = seconds.coerceIn(5, 60)
+        settingsRepository.setLockDuration(clamped)
+    }
+
     // ---------- Helpers ----------
 
     private fun settingsToUi(settings: AppSettings): HomeUiState {
@@ -82,7 +90,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             reelsEnabled = settings.reelsEnabled,
             reelsLimit = settings.reelsLimit,
             shortsEnabled = settings.shortsEnabled,
-            shortsTimeSeconds = (settings.shortsTimeMs / 1000L).toInt()
+            shortsTimeSeconds = (settings.shortsTimeMs / 1000L).toInt(),
+            lockDurationSeconds = settings.lockDurationSeconds
         )
     }
 }

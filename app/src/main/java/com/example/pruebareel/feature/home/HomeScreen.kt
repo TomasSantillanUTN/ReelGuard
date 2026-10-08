@@ -34,6 +34,7 @@ fun HomeScreen(
     onReelsLimitChange: (Int) -> Unit,
     onShortsEnabledChange: (Boolean) -> Unit,
     onShortsTimeChange: (Int) -> Unit,
+    onLockDurationChange: (Int) -> Unit,
     onOpenAccessibilitySettings: () -> Unit
 ) {
     Scaffold(
@@ -163,6 +164,39 @@ fun HomeScreen(
                     Text(
                         text = stringResource(id = R.string.shorts_card_recommendation),
                         style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            // --- Bloque Ajustes de Bloqueo ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.lock_settings_title),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(id = R.string.lock_settings_subtitle),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = stringResource(id = R.string.lock_settings_slider_label, state.lockDurationSeconds),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Slider(
+                        value = state.lockDurationSeconds.toFloat(),
+                        onValueChange = { onLockDurationChange(it.toInt()) },
+                        valueRange = 5f..60f,
+                        steps = 55
                     )
                 }
             }

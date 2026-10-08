@@ -23,4 +23,13 @@
     <string name="shorts_card_slider_label">Tiempo máximo: %d s</string>
     <string name="shorts_card_recommendation">Recomendado: 30–90 segundos.</string>
 
+    <!-- HomeScreen: Lock Settings -->
+    <string name="lock_settings_title">Ajustes de Bloqueo</string>
+    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio</string>
+    <string name="lock_settings_slider_label">Duración del bloqueo: %d s</string>
+    
+    <!-- Lock Overlay -->
+    <string name="lock_overlay_message">Llegaste al límite de reels</string>
+    <string name="lock_overlay_button">Volver al Home</string>
+
 </resources>

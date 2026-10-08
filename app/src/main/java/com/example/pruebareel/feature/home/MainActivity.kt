@@ -1,6 +1,7 @@
 package com.example.pruebareel.feature.home
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -28,6 +29,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Verificar si tenemos el permiso de overlay, si no, lo pedimos (opcional pero recomendado)
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
+
         setContent {
             PruebareelTheme {
                 val homeViewModel: HomeViewModel = viewModel()
@@ -40,6 +50,7 @@ class MainActivity : ComponentActivity() {
                     onReelsLimitChange = homeViewModel::onReelsLimitChange,
                     onShortsEnabledChange = homeViewModel::onShortsEnabledChange,
                     onShortsTimeChange = homeViewModel::onShortsTimeChange,
+                    onLockDurationChange = homeViewModel::onLockDurationChange,
                     onOpenAccessibilitySettings = {
                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     }

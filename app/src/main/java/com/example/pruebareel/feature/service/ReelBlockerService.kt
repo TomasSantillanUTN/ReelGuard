@@ -3,92 +3,101 @@ package com.example.pruebareel.feature.service
 import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.Toast
-import com.example.pruebareel.R
+import com.example.pruebareel.core.lock.LockManager
+import com.example.pruebareel.core.lock.LockOverlay
 import com.example.pruebareel.core.utils.findAny
 import com.example.pruebareel.data.preferences.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
  * Servicio de Accesibilidad para bloquear Instagram Reels después de un límite.
  *
- * **Importante:** Este servicio se basa en heurísticas para detectar cuándo el usuario está
- * viendo Reels. Su funcionamiento depende de la estructura de la interfaz de usuario de la app
- * de Instagram. Si Instagram actualiza su diseño, es muy probable que este servicio deje de
- * funcionar hasta que se actualicen las heurísticas de detección.
+ * Implementa un bloqueo persistente mediante un overlay que sobrevive a reinicios del proceso.
  */
 class ReelBlockerService : AccessibilityService() {
 
     private lateinit var settingsRepository: SettingsRepository
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    private lateinit var lockManager: LockManager
+    private lateinit var lockOverlay: LockOverlay
+
     private var reelsEnabled = true
     private var maxReels: Int = 5
+    private var lockDurationSeconds: Int = 10
     private var reelCount = 0
     private var inReelViewer = false
 
-    // Variables para el "debouncing" y evitar el conteo múltiple
     private var lastReelCountTime = 0L
-    private val DEBOUNCE_TIME_MS = 500L // 0.5 segundos
+    private val DEBOUNCE_TIME_MS = 500L
 
-
-    /**
-     * Se llama cuando el sistema conecta con el servicio.
-     *
-     * Aquí se inicializa el repositorio de configuración y se comienza a observar el Flow
-     * de ajustes para obtener los valores más recientes de `reelsEnabled` y `maxReels`.
-     */
     override fun onServiceConnected() {
         super.onServiceConnected()
         settingsRepository = SettingsRepository(this)
+        lockManager = LockManager(settingsRepository)
+        
+        // Inicializamos el overlay con la acción de volver al Home y limpiar el bloqueo
+        lockOverlay = LockOverlay(this) {
+            serviceScope.launch {
+                lockManager.clearLock()
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+        }
+
+        // PERSISTENCIA: Chequeo inicial al conectar el servicio
+        checkPersistentLock()
 
         serviceScope.launch {
             settingsRepository.settingsFlow.collect { settings ->
                 reelsEnabled = settings.reelsEnabled
                 maxReels = settings.reelsLimit
+                lockDurationSeconds = settings.lockDurationSeconds
             }
         }
     }
 
-    /**
-     * Callback principal que recibe los eventos de accesibilidad del sistema.
-     *
-     * Filtra los eventos para actuar solo sobre los de la app de Instagram. Llama a las
-     * funciones de detección y, si se cumple la condición de bloqueo, activa la acción.
-     */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || !reelsEnabled) return
+
+        // GESTIÓN DE VISIBILIDAD DEL OVERLAY
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val packageName = event.packageName?.toString()
+            if (packageName == "com.instagram.android") {
+                // Si el usuario está en Instagram, verificamos si debe estar bloqueado
+                checkPersistentLock()
+            } else {
+                // Si sale de Instagram, ocultamos el overlay para no bloquear otras apps
+                lockOverlay.hide()
+            }
+        }
+
+        // Si no estamos en Instagram, no procesamos el conteo
         if (event.packageName != "com.instagram.android") return
 
         val root = rootInActiveWindow ?: return
-
-        // Se determina si el usuario está en la pantalla de Reels a pantalla completa.
         inReelViewer = isFullScreenReel(event, root)
 
         when (event.eventType) {
-
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 if (inReelViewer) {
                     val currentTime = System.currentTimeMillis()
-                    // Implementación de "debouncing" para el conteo
                     if (currentTime - lastReelCountTime > DEBOUNCE_TIME_MS) {
                         lastReelCountTime = currentTime
                         reelCount++
 
+                        // TRIGGER: Al llegar al límite, disparamos el bloqueo
                         if (reelCount >= maxReels) {
-                            blockInstagram()
+                            triggerLock()
                         }
                     }
                 }
             }
 
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                // Si el usuario sale de la pantalla de Reels, se resetea el contador.
                 if (!inReelViewer) {
                     reelCount = 0
                 }
@@ -97,51 +106,50 @@ class ReelBlockerService : AccessibilityService() {
     }
 
     /**
-     * Determina si el usuario está viendo un Reel en pantalla completa.
-     *
-     * La detección se basa en dos heurísticas:
-     * 1. El evento de scroll proviene de un componente `ViewPager`.
-     * 2. Existe un nodo en la pantalla cuya descripción de contenido empieza con "Reel de ".
-     *
-     * @return `true` si parece que el usuario está en la interfaz de Reels, `false` en caso contrario.
+     * Verifica si hay un bloqueo activo en DataStore y muestra el overlay si corresponde.
      */
-    private fun isFullScreenReel(
-        event: AccessibilityEvent,
-        root: AccessibilityNodeInfo
-    ): Boolean {
-
-        val srcClass = event.source?.className?.toString() ?: ""
-
-        val fromViewPager =
-            srcClass.contains("ViewPager", ignoreCase = true)
-
-        if (!fromViewPager) return false
-
-        val hasReelLabel = root.findAny {
-            val desc = it.contentDescription?.toString() ?: return@findAny false
-            desc.startsWith("Reel de ")
+    private fun checkPersistentLock() {
+        serviceScope.launch {
+            val remaining = lockManager.getRemainingMillis()
+            if (remaining > 0) {
+                // Solo mostramos si Instagram es la app activa
+                if (rootInActiveWindow?.packageName == "com.instagram.android") {
+                    lockOverlay.show(System.currentTimeMillis() + remaining)
+                }
+            } else {
+                // Si el tiempo expiró, ocultamos y limpiamos el estado
+                lockManager.clearLock()
+                lockOverlay.hide()
+            }
         }
-
-        return hasReelLabel
     }
 
     /**
-     * Ejecuta la acción de bloqueo: resetea el contador, lleva al usuario a la pantalla de inicio
-     * y muestra un mensaje informativo.
+     * Inicia el periodo de bloqueo persistente.
      */
-    private fun blockInstagram() {
+    private fun triggerLock() {
         reelCount = 0
-        performGlobalAction(GLOBAL_ACTION_HOME)
-        Toast.makeText(this, getString(R.string.reel_blocker_toast), Toast.LENGTH_SHORT).show()
+        serviceScope.launch {
+            lockManager.startLock(lockDurationSeconds)
+            checkPersistentLock()
+        }
+    }
+
+    private fun isFullScreenReel(event: AccessibilityEvent, root: AccessibilityNodeInfo): Boolean {
+        val srcClass = event.source?.className?.toString() ?: ""
+        val fromViewPager = srcClass.contains("ViewPager", ignoreCase = true)
+        if (!fromViewPager) return false
+
+        return root.findAny {
+            it.contentDescription?.toString()?.startsWith("Reel de ") == true
+        }
     }
 
     override fun onInterrupt() {}
 
-    /**
-     * Se llama cuando el servicio se va a destruir. Cancela la corutina para evitar fugas de memoria.
-     */
     override fun onDestroy() {
         super.onDestroy()
+        lockOverlay.hide()
         serviceScope.cancel()
     }
 }
