@@ -85,9 +85,17 @@ class LockOverlay(
                 val remaining = endTimeMillis - System.currentTimeMillis()
                 if (remaining > 0) {
                     val totalSeconds = (remaining + 999) / 1000
-                    tvTimer?.text = String.format(
-                        Locale.getDefault(), "%02d:%02d", totalSeconds / 60, totalSeconds % 60
-                    )
+                    tvTimer?.text = if (totalSeconds >= 3600) {
+                        // Bloqueos largos (límite diario / horario): H:MM:SS
+                        String.format(
+                            Locale.getDefault(), "%d:%02d:%02d",
+                            totalSeconds / 3600, (totalSeconds % 3600) / 60, totalSeconds % 60
+                        )
+                    } else {
+                        String.format(
+                            Locale.getDefault(), "%02d:%02d", totalSeconds / 60, totalSeconds % 60
+                        )
+                    }
                     btnHome?.isEnabled = false
                 } else {
                     tvTimer?.text = "00:00"

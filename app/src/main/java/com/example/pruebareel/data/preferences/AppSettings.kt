@@ -1,36 +1,40 @@
 package com.example.pruebareel.data.preferences
 
+import com.example.pruebareel.core.lock.LockState
+import com.example.pruebareel.core.lock.LockTarget
+
 /**
  * Modelo de datos para la configuración de la aplicación.
  *
- * @property reelsEnabled Indica si el bloqueo de Reels de Instagram está activado.
- * @property reelsLimit El número máximo de Reels consecutivos permitidos.
- * @property shortsEnabled Indica si el bloqueo de Shorts de YouTube está activado.
- * @property shortsTimeMs El tiempo máximo (en milisegundos) permitido para ver Shorts.
- * @property lockDurationSeconds La duración del periodo de bloqueo en segundos (máx. 10 minutos).
- * @property blockNavigation Si es `true`, la pantalla de bloqueo no deja usar Home/Volver/Recientes.
- *   Si es `false`, la pantalla deja libres los botones del sistema y se oculta al salir de la app.
- * @property isLockActive Indica si hay un periodo de bloqueo activo para Instagram.
- * @property lockEndTimestamp El timestamp (ms) en el que termina el bloqueo de Instagram.
- * @property ytLockActive Indica si hay un periodo de bloqueo activo para YouTube.
- * @property ytLockEndTimestamp El timestamp (ms) en el que termina el bloqueo de YouTube.
- * @property tiktokEnabled Indica si el límite de videos de TikTok está activado.
- * @property tiktokLimit El número máximo de videos de TikTok consecutivos.
- * @property ttLockActive / ttLockEndTimestamp Estado del bloqueo de TikTok.
+ * Límites "seguidos" (streak): cantidad de videos o tiempo consecutivo antes del bloqueo corto.
+ * Límites diarios: total por día; `0` significa sin límite.
+ *
+ * @property lockDurationSeconds Duración del bloqueo corto (máx. 10 minutos).
+ * @property blockNavigation Si el bloqueo corto impide usar Inicio / Volver / Recientes.
+ * @property quietHoursEnabled Si está activo el horario sin videos.
+ * @property quietStartMinute Inicio del horario, en minutos desde las 00:00 (ej. 23:00 = 1380).
+ * @property quietEndMinute Fin del horario, en minutos desde las 00:00 (puede ser menor que el inicio).
+ * @property locks Bloqueos activos o vencidos guardados, por app.
  */
 data class AppSettings(
     val reelsEnabled: Boolean,
     val reelsLimit: Int,
+    val reelsDailyLimit: Int,
+
     val shortsEnabled: Boolean,
     val shortsTimeMs: Long,
-    val lockDurationSeconds: Int,
-    val blockNavigation: Boolean,
-    val isLockActive: Boolean,
-    val lockEndTimestamp: Long,
-    val ytLockActive: Boolean,
-    val ytLockEndTimestamp: Long,
+    val shortsDailyMinutes: Int,
+
     val tiktokEnabled: Boolean,
     val tiktokLimit: Int,
-    val ttLockActive: Boolean,
-    val ttLockEndTimestamp: Long
+    val tiktokDailyLimit: Int,
+
+    val lockDurationSeconds: Int,
+    val blockNavigation: Boolean,
+
+    val quietHoursEnabled: Boolean,
+    val quietStartMinute: Int,
+    val quietEndMinute: Int,
+
+    val locks: Map<LockTarget, LockState>
 )

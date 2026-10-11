@@ -1,47 +1,79 @@
 <resources>
     <string name="app_name">ReelGuard</string>
+    <string name="accessibility_service_description">ReelGuard detecta cuándo mirás Reels de Instagram, Shorts de YouTube o videos de TikTok para aplicar tus límites. Todo funciona en el celular: no lee ni envía tu contenido.</string>
 
-    <!-- Blocker Toasts -->
-    <string name="reel_blocker_toast">Basta de Reels por ahora 😅</string>
-    <string name="shorts_blocker_toast">Tiempo de Shorts terminado 😅</string>
+    <!-- General -->
+    <string name="save">Guardar</string>
 
     <!-- HomeScreen: General -->
     <string name="home_screen_title">ReelGuard</string>
     <string name="home_screen_subtitle">Asistente de bienestar digital</string>
-    <string name="home_open_accessibility_button">Abrir configuración de accesibilidad</string>
-    <string name="home_privacy_disclaimer">La app no lee tu contenido, sólo la estructura de la interfaz para detectar Reels/Shorts.</string>
+    <string name="home_privacy_disclaimer">La app no lee tu contenido, sólo la estructura de la interfaz para detectar Reels/Shorts/TikToks. Las estadísticas quedan guardadas solo en este celular.</string>
+
+    <!-- HomeScreen: Estado -->
+    <string name="status_title">Estado</string>
+    <string name="status_service_ok">Servicio de accesibilidad activo</string>
+    <string name="status_service_missing">Servicio de accesibilidad desactivado</string>
+    <string name="status_service_button">Activar</string>
+    <string name="status_overlay_ok">Permiso para mostrarse sobre otras apps</string>
+    <string name="status_overlay_missing">Falta el permiso para mostrarse sobre otras apps</string>
+    <string name="status_overlay_button">Dar permiso</string>
+    <string name="status_help">Sin estos dos permisos ReelGuard no puede detectar ni bloquear. En Accesibilidad buscá \"ReelGuard\" (a veces está dentro de \"Apps instaladas\" o \"Servicios descargados\").</string>
+
+    <!-- HomeScreen: Estadísticas -->
+    <string name="stats_title">Estadísticas</string>
+    <string name="stats_empty">Todavía no hay datos.</string>
+    <string name="stats_today">Hoy</string>
+    <string name="stats_week">Últimos 7 días</string>
+    <string name="stats_label_today">Hoy</string>
+    <string name="stats_label_yesterday">Ayer</string>
+    <string name="stats_line">%1$d reels · %2$d TikToks · %3$s de Shorts · %4$d bloqueos</string>
+
+    <!-- HomeScreen: Límites diarios -->
+    <string name="daily_limit_reels">Límite total por día (reels)</string>
+    <string name="daily_limit_shorts">Límite total por día (minutos de Shorts)</string>
+    <string name="daily_limit_tiktok">Límite total por día (videos)</string>
+    <string name="daily_limit_field">Por día</string>
+    <string name="daily_limit_hint">0 = sin límite diario. Al llegar, la app queda bloqueada hasta las 00:00.</string>
 
     <!-- HomeScreen: Instagram Reels Card -->
     <string name="reels_card_title">Instagram Reels</string>
     <string name="reels_card_subtitle">Limita la cantidad de reels consecutivos</string>
-    <string name="reels_card_slider_label">Máximo de reels por sesión: %d</string>
-    <string name="reels_card_recommendation">Recomendado: entre 3 y 8 reels.</string>
+    <string name="reels_card_slider_label">Máximo de reels seguidos: %d</string>
 
     <!-- HomeScreen: YouTube Shorts Card -->
     <string name="shorts_card_title">YouTube Shorts</string>
-    <string name="shorts_card_subtitle">Limita el tiempo total en Shorts</string>
-    <string name="shorts_card_slider_label">Tiempo máximo: %d s</string>
-    <string name="shorts_card_recommendation">Recomendado: 30–90 segundos.</string>
+    <string name="shorts_card_subtitle">Limita el tiempo en Shorts</string>
+    <string name="shorts_card_slider_label">Tiempo máximo seguido: %d s</string>
 
     <!-- HomeScreen: TikTok Card -->
     <string name="tiktok_card_title">TikTok</string>
     <string name="tiktok_card_subtitle">Limita la cantidad de videos consecutivos</string>
-    <string name="tiktok_card_slider_label">Máximo de videos por sesión: %d</string>
+    <string name="tiktok_card_slider_label">Máximo de videos seguidos: %d</string>
 
     <!-- HomeScreen: Lock Settings -->
     <string name="lock_settings_title">Ajustes de Bloqueo</string>
-    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio (Instagram, YouTube y TikTok)</string>
+    <string name="lock_settings_subtitle">Periodo de espera al llegar al límite de videos seguidos (Instagram, YouTube y TikTok)</string>
     <string name="lock_settings_duration_label">Duración del bloqueo (máx. 10 minutos)</string>
     <string name="lock_settings_minutes">Minutos</string>
     <string name="lock_settings_seconds">Segundos</string>
     <string name="lock_settings_current">Guardado: %1$d min %2$d s</string>
     <string name="lock_settings_block_nav">Bloquear botones del sistema</string>
-    <string name="lock_settings_block_nav_desc">Si está marcado, no se puede usar Inicio, Volver ni Recientes hasta que termine la cuenta regresiva. Si no, podés salir y seguir usando el celular (la app sigue bloqueada).</string>
+    <string name="lock_settings_block_nav_desc">Si está marcado, no se puede usar Inicio, Volver ni Recientes hasta que termine la cuenta regresiva. Si no, podés salir y seguir usando el celular (la app sigue bloqueada). No aplica al límite diario ni al horario sin videos: esos nunca bloquean los botones.</string>
+
+    <!-- HomeScreen: Horario sin videos -->
+    <string name="quiet_title">Horario sin videos</string>
+    <string name="quiet_subtitle">En este horario no se pueden mirar Reels, Shorts ni TikToks</string>
+    <string name="quiet_from">Desde (HH:MM)</string>
+    <string name="quiet_to">Hasta (HH:MM)</string>
+    <string name="quiet_hint">Puede cruzar la medianoche, por ejemplo de 23:00 a 07:00.</string>
 
     <!-- Lock Overlay -->
     <string name="lock_overlay_message">Llegaste al límite de reels</string>
     <string name="lock_overlay_message_tiktok">Llegaste al límite de TikToks</string>
     <string name="lock_overlay_message_shorts">Se terminó el tiempo de Shorts</string>
+    <string name="lock_overlay_message_daily">Llegaste al límite de hoy. Se libera a las 00:00</string>
+    <string name="lock_overlay_message_quiet">Horario sin videos</string>
     <string name="lock_overlay_button">Volver al Home</string>
 
 </resources>

@@ -12,8 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Pruebareel">
 
+        <!-- Único servicio de accesibilidad: Instagram, YouTube y TikTok -->
         <service
-            android:name=".feature.service.ReelBlockerService"
+            android:name=".feature.service.ReelGuardService"
+            android:label="@string/app_name"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             tools:ignore="AccessibilityPolicy">
@@ -22,32 +24,7 @@
             </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/reel_blocker_service" />
-        </service>
-
-        <service
-            android:name=".feature.service.YoutubeShortsTimeBlockerService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/youtube_shorts_time_service" />
-        </service>
-
-        <service
-            android:name=".feature.service.TikTokBlockerService"
-            android:label="ReelGuard - TikTok"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/tiktok_blocker_service" />
+                android:resource="@xml/reelguard_service" />
         </service>
 
         <activity

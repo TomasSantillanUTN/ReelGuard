@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sin android:packageNames: hay que ver eventos de otras apps (launcher) y la lista de ventanas
-     para detectar el Short en ventana flotante (PiP). canPerformGestures permite cerrarla. -->
+<!-- Configuración del único servicio de accesibilidad (Instagram, YouTube y TikTok).
+     Sin android:packageNames: necesita enterarse cuando el usuario sale de una app (para ocultar
+     la pantalla de bloqueo) y ver la lista de ventanas (Short en ventana flotante).
+     canPerformGestures permite cerrar la ventana flotante de YouTube. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
@@ -8,4 +10,4 @@
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="true"
     android:notificationTimeout="100"
-    android:description="@string/app_name" />
+    android:description="@string/accessibility_service_description" />

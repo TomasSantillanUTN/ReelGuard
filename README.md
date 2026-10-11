@@ -1,16 +1,22 @@
 # ReelGuard: Tu Asistente de Bienestar Digital
 
-ReelGuard es una aplicación de Android diseñada para ayudarte a tomar el control de tu consumo de contenido en redes sociales, específicamente en Instagram Reels y YouTube Shorts. Utiliza los Servicios de Accesibilidad de Android para monitorear tu actividad de forma local y segura, sin recolectar ningún tipo de dato personal.
+ReelGuard es una aplicación de Android que te ayuda a tomar el control de tu consumo de videos cortos en **Instagram Reels**, **YouTube Shorts** y **TikTok**. Utiliza un Servicio de Accesibilidad de Android para detectar tu actividad de forma local y segura, sin recolectar ningún tipo de dato personal.
 
 ---
 
 ## 🌟 Características Principales
 
-- **Límite de Reels en Instagram:** Establece un número máximo de Reels que puedes ver de forma consecutiva. Una vez alcanzado el límite, la app te devuelve a la pantalla de inicio.
-- **Control de Tiempo en YouTube Shorts:** Define un tiempo máximo de visualización para los YouTube Shorts. Cuando el tiempo se agota, la app te saca de la sección de Shorts.
-- **Configuración Personalizable:** Ajusta los límites según tus propias metas de bienestar digital.
-- **Privacidad Primero:** La aplicación funciona completamente en tu dispositivo. No requiere conexión a internet y no recopila ni envía ninguna información personal.
-- **Interfaz Moderna:** Desarrollada con Jetpack Compose, siguiendo las últimas guías de diseño de Material You.
+- **Límite de videos seguidos:** máximo de Reels / TikToks consecutivos y tiempo máximo seguido en Shorts. Al llegar, aparece una **pantalla de bloqueo con cuenta regresiva** (de 5 segundos a 10 minutos).
+- **Bloquear o no los botones del sistema:** con la opción activada no se puede salir hasta que termine la cuenta regresiva. Desactivada, la pantalla de bloqueo no tapa Inicio / Volver / Recientes y desaparece al salir de la app.
+- **Límite diario por app:** total de Reels, TikToks o minutos de Shorts por día. Al llegar, la app queda bloqueada hasta las 00:00.
+- **Horario sin videos:** por ejemplo de 23:00 a 07:00 (puede cruzar la medianoche).
+- **Estadísticas:** videos vistos, minutos de Shorts y bloqueos de hoy y de los últimos 7 días.
+- **Estado de permisos:** la pantalla principal muestra si el servicio de accesibilidad y el permiso de superposición están activos.
+- **YouTube Shorts en ventana flotante:** si un Short se minimiza al tocar Inicio, la ventana se cierra.
+- **Los comentarios no reinician el contador** (Instagram y TikTok).
+- **Privacidad primero:** todo funciona en el dispositivo. No requiere internet y no envía información.
+
+> El límite diario y el horario sin videos **nunca** bloquean los botones del sistema, aunque la opción esté activada, para que el celular no quede inutilizable por horas.
 
 ---
 
@@ -22,41 +28,56 @@ ReelGuard es una aplicación de Android diseñada para ayudarte a tomar el contr
 
 ## ⚠️ Una Nota Importante Sobre la Fiabilidad
 
-Esta aplicación funciona analizando la estructura de la interfaz de usuario (UI) de Instagram y YouTube. **No utiliza ninguna API oficial**, ya que no existen para esta finalidad.
+La aplicación funciona analizando la estructura de la interfaz de usuario (UI) de Instagram, YouTube y TikTok. **No utiliza ninguna API oficial**, ya que no existen para esta finalidad.
 
-Esto significa que su funcionamiento es **frágil por naturaleza**. Si Instagram o YouTube realizan un cambio significativo en el diseño de sus aplicaciones, es muy probable que los servicios de bloqueo de `ReelGuard` dejen de funcionar hasta que se actualicen las heurísticas de detección.
+Esto significa que su funcionamiento es **frágil por naturaleza**. Si alguna de estas apps cambia su diseño, es probable que la detección deje de funcionar hasta que se actualicen las heurísticas. Cada heurística está documentada en su módulo:
 
-He documentado este enfoque basado en heurísticas en el código de los `AccessibilityService` (`ReelBlockerService` y `YoutubeShortsTimeBlockerService`) como muestra de transparencia técnica.
+| App | Módulo | Cómo detecta |
+| --- | --- | --- |
+| Instagram | `InstagramModule` | Scroll de un `ViewPager` + nodos con descripción "Reel de …" |
+| YouTube | `YoutubeShortsModule` | Nodo con "Short" + `SeekBar`; ventana flotante vía lista de ventanas |
+| TikTok | `TikTokModule` | Pestañas "Para ti" / "Siguiendo" + scroll de un contenedor a pantalla completa ([captura de referencia](./docs/tiktok_feed.jpeg)) |
+
+Para depurar TikTok, filtrar Logcat por `ReelGuard-TikTok`.
 
 ---
 
 ## 🛠️ Tecnologías y Arquitectura
 
-Este proyecto demuestra el uso de tecnologías y prácticas modernas en el desarrollo de Android:
-
 - **Lenguaje:** [Kotlin](https://kotlinlang.org/) (100%)
-- **UI:** [Jetpack Compose](https://developer.android.com/jetpack/compose) para una interfaz de usuario declarativa y moderna.
-- **Arquitectura:** MVVM (Model-View-ViewModel) para una clara separación de responsabilidades.
-- **Gestión de Estado:** [Kotlin Flows](https://kotlinlang.org/docs/flow.html) y [StateFlow](https://developer.android.com/kotlin/flow/stateflow-and-sharedflow) para manejar el estado de la UI de forma reactiva.
-- **Persistencia de Datos:** [Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore) (Preferences) para guardar la configuración del usuario de forma asíncrona y segura.
-- **Inyección de Dependencias (Manual):** Se sigue un patrón de inyección de dependencias manual para desacoplar las clases.
-- **Servicios de Accesibilidad:** Para interactuar con la interfaz de otras aplicaciones de una manera consciente de la privacidad.
+- **UI:** [Jetpack Compose](https://developer.android.com/jetpack/compose) + Material 3.
+- **Arquitectura:** MVVM (Model-View-ViewModel).
+- **Gestión de Estado:** Kotlin Flows y StateFlow.
+- **Persistencia:** [Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore) (Preferences) para la configuración, los bloqueos y las estadísticas.
+- **Servicio de Accesibilidad único** (`ReelGuardService`) que reparte los eventos a un módulo por app (`BlockerModule`). Lo común (pantalla de bloqueo, horarios, límites diarios, estadísticas) vive en el servicio; lo específico de cada app, en su módulo.
+
+```
+feature/service/
+├── ReelGuardService.kt        ← servicio único (bloqueos, horarios, estadísticas)
+├── BlockerModule.kt           ← interfaz de cada app
+└── modules/
+    ├── InstagramModule.kt
+    ├── YoutubeShortsModule.kt
+    └── TikTokModule.kt
+```
 
 ---
 
 ## 🚀 Cómo Empezar
 
-Para compilar y ejecutar este proyecto, sigue estos pasos:
-
 1.  **Clona el repositorio:**
     ```bash
     git clone https://github.com/TomasSantillanUTN/ReelGuard.git
     ```
-2.  **Abre el proyecto** en Android Studio (versión Iguana o superior recomendada).
-3.  **Sincroniza Gradle** y espera a que se descarguen todas las dependencias.
+2.  **Abre el proyecto** en Android Studio.
+3.  **Sincroniza Gradle** y espera a que se descarguen las dependencias.
 4.  **Ejecuta la aplicación** en un emulador o en un dispositivo físico.
-5.  **Activa el Servicio de Accesibilidad:** Una vez que la app esté instalada, abre la pantalla de configuración y pulsa en "Abrir configuración de accesibilidad". Desde allí, busca y activa los servicios "ReelGuard" (para Instagram) y "YoutubeShortsTimeBlockerService" (para YouTube).
+5.  **Activa los permisos** desde la tarjeta "Estado" de la pantalla principal:
+    - **Servicio de accesibilidad "ReelGuard"** (uno solo para las tres apps). En algunos celulares está dentro de "Apps instaladas" o "Servicios descargados".
+    - **Mostrar sobre otras apps** (para la pantalla de bloqueo).
 
---- 
+> Si venías de una versión anterior con tres servicios separados, desactivalos: ahora hay un único servicio "ReelGuard".
+
+---
 
 *Este proyecto fue creado como parte de mi portfolio personal. ¡Espero que te guste!*
