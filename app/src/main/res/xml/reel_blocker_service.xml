@@ -2,8 +2,9 @@
 <!-- Sin android:packageNames: el servicio necesita enterarse cuando el usuario sale de Instagram
      (modo no bloqueante) para ocultar la pantalla de bloqueo. El filtro por app se hace en el código. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows"
     android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
     android:description="@string/app_name" />

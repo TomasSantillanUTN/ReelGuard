@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import com.example.pruebareel.R
 import com.example.pruebareel.core.lock.LockManager
 import com.example.pruebareel.core.lock.LockOverlay
@@ -132,7 +133,8 @@ class ReelBlockerService : AccessibilityService() {
                     lockOverlay.show(
                         endTimeMillis = System.currentTimeMillis() + remaining,
                         message = getString(R.string.lock_overlay_message),
-                        blockNavigation = blockNavigation
+                        blockNavigation = blockNavigation,
+                        shouldStayVisible = ::stillInBlockedApp
                     )
                 }
             } else if (!lockOverlay.isShowing) {
@@ -172,6 +174,28 @@ class ReelBlockerService : AccessibilityService() {
             val s = it.toString()
             s.contains("comentario", ignoreCase = true) || s.contains("comment", ignoreCase = true)
         }
+    }
+
+
+    /**
+     * Paquete de la app que está realmente en primer plano (la ventana de aplicación con foco).
+     * El overlay no toma el foco en modo no bloqueante, así que no interfiere.
+     */
+    private fun foregroundPackage(): String? {
+        val fromWindows = try {
+            windows.firstOrNull {
+                it.type == AccessibilityWindowInfo.TYPE_APPLICATION && (it.isFocused || it.isActive)
+            }?.root?.packageName?.toString()
+        } catch (e: Exception) {
+            null
+        }
+        return fromWindows ?: rootInActiveWindow?.packageName?.toString()
+    }
+
+    /** En modo no bloqueante el overlay sigue visible solo mientras se esté en Instagram. */
+    private fun stillInBlockedApp(): Boolean {
+        val fg = foregroundPackage() ?: return true
+        return fg == INSTAGRAM || fg == SYSTEM_UI || fg == packageName
     }
 
     override fun onInterrupt() {}

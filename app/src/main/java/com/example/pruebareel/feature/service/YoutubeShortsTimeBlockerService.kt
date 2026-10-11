@@ -196,7 +196,8 @@ class YoutubeShortsTimeBlockerService : AccessibilityService() {
                     lockOverlay.show(
                         endTimeMillis = lockEndCache,
                         message = getString(R.string.lock_overlay_message_shorts),
-                        blockNavigation = blockNavigation
+                        blockNavigation = blockNavigation,
+                        shouldStayVisible = ::stillInBlockedApp
                     )
                 }
             } else if (!lockOverlay.isShowing) {
@@ -241,6 +242,28 @@ class YoutubeShortsTimeBlockerService : AccessibilityService() {
             .addStroke(GestureDescription.StrokeDescription(path, 0, 600))
             .build()
         dispatchGesture(gesture, null, null)
+    }
+
+
+    /**
+     * Paquete de la app que está realmente en primer plano (la ventana de aplicación con foco).
+     * El overlay no toma el foco en modo no bloqueante, así que no interfiere.
+     */
+    private fun foregroundPackage(): String? {
+        val fromWindows = try {
+            windows.firstOrNull {
+                it.type == AccessibilityWindowInfo.TYPE_APPLICATION && (it.isFocused || it.isActive)
+            }?.root?.packageName?.toString()
+        } catch (e: Exception) {
+            null
+        }
+        return fromWindows ?: rootInActiveWindow?.packageName?.toString()
+    }
+
+    /** En modo no bloqueante el overlay sigue visible solo mientras se esté en YouTube. */
+    private fun stillInBlockedApp(): Boolean {
+        val fg = foregroundPackage() ?: return true
+        return fg == YOUTUBE || fg == SYSTEM_UI || fg == packageName
     }
 
     override fun onInterrupt() {}
