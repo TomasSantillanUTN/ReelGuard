@@ -25,6 +25,8 @@ data class HomeUiState(
     val shortsTimeSeconds: Int = 5,
     val lockDurationSeconds: Int = 10,
     val blockNavigation: Boolean = true,
+    val tiktokEnabled: Boolean = true,
+    val tiktokLimit: Int = 5,
     val loaded: Boolean = false
 )
 
@@ -69,6 +71,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         settingsRepository.setBlockNavigation(enabled)
     }
 
+    fun onTiktokEnabledChange(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setTiktokEnabled(enabled)
+    }
+
+    fun onTiktokLimitChange(newLimit: Int) = viewModelScope.launch {
+        settingsRepository.setTiktokLimit(newLimit)
+    }
+
     // ---------- Helpers ----------
 
     private fun settingsToUi(settings: AppSettings): HomeUiState {
@@ -79,6 +89,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             shortsTimeSeconds = (settings.shortsTimeMs / 1000L).toInt(),
             lockDurationSeconds = settings.lockDurationSeconds,
             blockNavigation = settings.blockNavigation,
+            tiktokEnabled = settings.tiktokEnabled,
+            tiktokLimit = settings.tiktokLimit,
             loaded = true
         )
     }

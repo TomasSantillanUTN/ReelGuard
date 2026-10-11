@@ -23,9 +23,14 @@
     <string name="shorts_card_slider_label">Tiempo máximo: %d s</string>
     <string name="shorts_card_recommendation">Recomendado: 30–90 segundos.</string>
 
+    <!-- HomeScreen: TikTok Card -->
+    <string name="tiktok_card_title">TikTok</string>
+    <string name="tiktok_card_subtitle">Limita la cantidad de videos consecutivos</string>
+    <string name="tiktok_card_slider_label">Máximo de videos por sesión: %d</string>
+
     <!-- HomeScreen: Lock Settings -->
     <string name="lock_settings_title">Ajustes de Bloqueo</string>
-    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio (Instagram y YouTube)</string>
+    <string name="lock_settings_subtitle">Configura el periodo de espera obligatorio (Instagram, YouTube y TikTok)</string>
     <string name="lock_settings_duration_label">Duración del bloqueo (máx. 10 minutos)</string>
     <string name="lock_settings_minutes">Minutos</string>
     <string name="lock_settings_seconds">Segundos</string>
@@ -35,6 +40,7 @@
 
     <!-- Lock Overlay -->
     <string name="lock_overlay_message">Llegaste al límite de reels</string>
+    <string name="lock_overlay_message_tiktok">Llegaste al límite de TikToks</string>
     <string name="lock_overlay_message_shorts">Se terminó el tiempo de Shorts</string>
     <string name="lock_overlay_button">Volver al Home</string>
 

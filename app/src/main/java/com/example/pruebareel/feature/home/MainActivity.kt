@@ -49,6 +49,8 @@ class MainActivity : ComponentActivity() {
                     onReelsEnabledChange = homeViewModel::onReelsEnabledChange,
                     onReelsLimitChange = homeViewModel::onReelsLimitChange,
                     onShortsEnabledChange = homeViewModel::onShortsEnabledChange,
+                    onTiktokEnabledChange = homeViewModel::onTiktokEnabledChange,
+                    onTiktokLimitChange = homeViewModel::onTiktokLimitChange,
                     onShortsTimeChange = homeViewModel::onShortsTimeChange,
                     onLockDurationChange = homeViewModel::onLockDurationChange,
                     onBlockNavigationChange = homeViewModel::onBlockNavigationChange,

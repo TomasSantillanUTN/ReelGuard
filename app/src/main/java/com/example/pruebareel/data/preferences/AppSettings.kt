@@ -14,6 +14,9 @@ package com.example.pruebareel.data.preferences
  * @property lockEndTimestamp El timestamp (ms) en el que termina el bloqueo de Instagram.
  * @property ytLockActive Indica si hay un periodo de bloqueo activo para YouTube.
  * @property ytLockEndTimestamp El timestamp (ms) en el que termina el bloqueo de YouTube.
+ * @property tiktokEnabled Indica si el límite de videos de TikTok está activado.
+ * @property tiktokLimit El número máximo de videos de TikTok consecutivos.
+ * @property ttLockActive / ttLockEndTimestamp Estado del bloqueo de TikTok.
  */
 data class AppSettings(
     val reelsEnabled: Boolean,
@@ -25,5 +28,9 @@ data class AppSettings(
     val isLockActive: Boolean,
     val lockEndTimestamp: Long,
     val ytLockActive: Boolean,
-    val ytLockEndTimestamp: Long
+    val ytLockEndTimestamp: Long,
+    val tiktokEnabled: Boolean,
+    val tiktokLimit: Int,
+    val ttLockActive: Boolean,
+    val ttLockEndTimestamp: Long
 )

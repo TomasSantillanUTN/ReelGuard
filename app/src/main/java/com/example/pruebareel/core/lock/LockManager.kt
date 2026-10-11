@@ -4,7 +4,7 @@ import com.example.pruebareel.data.preferences.SettingsRepository
 import kotlinx.coroutines.flow.first
 
 /** App sobre la que se aplica un bloqueo. Cada una tiene su propio estado. */
-enum class LockTarget { INSTAGRAM, YOUTUBE }
+enum class LockTarget { INSTAGRAM, YOUTUBE, TIKTOK }
 
 /**
  * Gestiona la lógica de bloqueo persistente para una app concreta.
@@ -29,6 +29,7 @@ class LockManager(
         val (active, end) = when (target) {
             LockTarget.INSTAGRAM -> settings.isLockActive to settings.lockEndTimestamp
             LockTarget.YOUTUBE -> settings.ytLockActive to settings.ytLockEndTimestamp
+            LockTarget.TIKTOK -> settings.ttLockActive to settings.ttLockEndTimestamp
         }
         if (!active) return 0
         val remaining = end - System.currentTimeMillis()

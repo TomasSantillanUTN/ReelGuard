@@ -46,6 +46,8 @@ fun HomeScreen(
     onReelsEnabledChange: (Boolean) -> Unit,
     onReelsLimitChange: (Int) -> Unit,
     onShortsEnabledChange: (Boolean) -> Unit,
+    onTiktokEnabledChange: (Boolean) -> Unit,
+    onTiktokLimitChange: (Int) -> Unit,
     onShortsTimeChange: (Int) -> Unit,
     onLockDurationChange: (Int) -> Unit,
     onBlockNavigationChange: (Boolean) -> Unit,
@@ -179,6 +181,51 @@ fun HomeScreen(
                     Text(
                         text = stringResource(id = R.string.shorts_card_recommendation),
                         style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            // --- Bloque TikTok ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.tiktok_card_title),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(id = R.string.tiktok_card_subtitle),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Switch(
+                            checked = state.tiktokEnabled,
+                            onCheckedChange = onTiktokEnabledChange
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(id = R.string.tiktok_card_slider_label, state.tiktokLimit),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Slider(
+                        value = state.tiktokLimit.toFloat(),
+                        onValueChange = { onTiktokLimitChange(it.toInt()) },
+                        valueRange = 1f..20f,
+                        steps = 18
                     )
                 }
             }

@@ -43,6 +43,12 @@ class SettingsRepository(private val context: Context) {
         // Bloqueo de YouTube
         val YT_IS_LOCK_ACTIVE = booleanPreferencesKey("yt_is_lock_active")
         val YT_LOCK_END_TIMESTAMP = longPreferencesKey("yt_lock_end_timestamp")
+
+        // TikTok
+        val TIKTOK_ENABLED = booleanPreferencesKey("tiktok_enabled")
+        val TIKTOK_LIMIT = intPreferencesKey("tiktok_limit")
+        val TT_IS_LOCK_ACTIVE = booleanPreferencesKey("tt_is_lock_active")
+        val TT_LOCK_END_TIMESTAMP = longPreferencesKey("tt_lock_end_timestamp")
     }
 
     val settingsFlow: Flow<AppSettings> = context.dataStore.data
@@ -57,7 +63,11 @@ class SettingsRepository(private val context: Context) {
                 isLockActive = preferences[Keys.IS_LOCK_ACTIVE] ?: false,
                 lockEndTimestamp = preferences[Keys.LOCK_END_TIMESTAMP] ?: 0L,
                 ytLockActive = preferences[Keys.YT_IS_LOCK_ACTIVE] ?: false,
-                ytLockEndTimestamp = preferences[Keys.YT_LOCK_END_TIMESTAMP] ?: 0L
+                ytLockEndTimestamp = preferences[Keys.YT_LOCK_END_TIMESTAMP] ?: 0L,
+                tiktokEnabled = preferences[Keys.TIKTOK_ENABLED] ?: true,
+                tiktokLimit = preferences[Keys.TIKTOK_LIMIT] ?: 5,
+                ttLockActive = preferences[Keys.TT_IS_LOCK_ACTIVE] ?: false,
+                ttLockEndTimestamp = preferences[Keys.TT_LOCK_END_TIMESTAMP] ?: 0L
             )
         }
 
@@ -75,6 +85,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShortsTimeMs(timeMs: Long) {
         context.dataStore.edit { it[Keys.SHORTS_TIME_MS] = timeMs }
+    }
+
+    suspend fun setTiktokEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.TIKTOK_ENABLED] = enabled }
+    }
+
+    suspend fun setTiktokLimit(limit: Int) {
+        context.dataStore.edit { it[Keys.TIKTOK_LIMIT] = limit }
     }
 
     /** Guarda la duración del bloqueo en segundos (entre 5 s y 10 min). */
@@ -100,6 +118,10 @@ class SettingsRepository(private val context: Context) {
                 LockTarget.YOUTUBE -> {
                     it[Keys.YT_IS_LOCK_ACTIVE] = active
                     it[Keys.YT_LOCK_END_TIMESTAMP] = endTimestamp
+                }
+                LockTarget.TIKTOK -> {
+                    it[Keys.TT_IS_LOCK_ACTIVE] = active
+                    it[Keys.TT_LOCK_END_TIMESTAMP] = endTimestamp
                 }
             }
         }
