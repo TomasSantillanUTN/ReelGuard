@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Versión de un solo color (íconos temáticos de Android 13+): escudo con la pausa calada. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M54,29L75,36.5V53.5C75,66.5 66.2,76 54,80.5C41.8,76 33,66.5 33,53.5V36.5Z M49,45a2.5,2.5 0,0 1,2.5 2.5v13a2.5,2.5 0,0 1,-5 0v-13a2.5,2.5 0,0 1,2.5 -2.5z M59,45a2.5,2.5 0,0 1,2.5 2.5v13a2.5,2.5 0,0 1,-5 0v-13a2.5,2.5 0,0 1,2.5 -2.5z" />
+</vector>

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.Pruebareel" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Antes de Android 12 no hay pantalla de inicio del sistema: se muestra este fondo
+         (mismo color que la app) mientras carga, en vez de un blanco. -->
+    <style name="Theme.Pruebareel" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#F5F6F2</item>
+    </style>
 </resources>
