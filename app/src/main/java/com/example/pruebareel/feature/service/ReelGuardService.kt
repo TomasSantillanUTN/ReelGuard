@@ -132,6 +132,19 @@ class ReelGuardService : AccessibilityService() {
 
         // 3) Eventos de la app del módulo.
         if (module == null || !module.isEnabled(s)) return
+
+        // Red de seguridad: si hay un bloqueo activo y la pantalla no está visible (por ejemplo,
+        // se volvió a la app desde el inicio del celular), se vuelve a mostrar con CUALQUIER
+        // evento de la app, no solo cuando se abre una pantalla nueva.
+        if (!overlay.isShowing && event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+            val lock = currentLock(module.target)
+            if (lock != null && lock.reason == LockReason.STREAK && lock.isActive(now) &&
+                rootInActiveWindow?.packageName?.toString() in module.packages
+            ) {
+                showOverlayIfLocked(module.target, eventFromTargetApp = true)
+            }
+        }
+
         if (isLocked(module.target, now)) return
 
         val root = rootInActiveWindow ?: return

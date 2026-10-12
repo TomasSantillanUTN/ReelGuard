@@ -39,6 +39,13 @@ class LockOverlay(
     private val handler = Handler(Looper.getMainLooper())
     private var updateRunnable: Runnable? = null
 
+    companion object {
+        /** Recién mostrado no se oculta: Android tarda un momento en informar qué app está abierta. */
+        private const val HIDE_GRACE_MS = 1_500L
+        /** Hacen falta estos chequeos seguidos (cada 500 ms) "fuera de la app" para ocultar. */
+        private const val CHECKS_TO_HIDE = 2
+    }
+
     val isShowing: Boolean get() = overlayView != null
 
     /**
@@ -72,14 +79,22 @@ class LockOverlay(
             onReturnHome()
         }
 
+        val shownAt = System.currentTimeMillis()
+        var outsideChecks = 0
+
         updateRunnable = object : Runnable {
             override fun run() {
                 if (overlayView == null) return
 
                 // Modo no bloqueante: si el usuario ya no está en la app bloqueada, se oculta.
-                if (!blockNavigation && !shouldStayVisible()) {
-                    hide()
-                    return
+                // Se espera un poco y se confirma 2 veces para no ocultarla por error justo al
+                // volver a la app (cuando Android todavía informa el inicio del celular).
+                if (!blockNavigation && System.currentTimeMillis() - shownAt > HIDE_GRACE_MS) {
+                    outsideChecks = if (shouldStayVisible()) 0 else outsideChecks + 1
+                    if (outsideChecks >= CHECKS_TO_HIDE) {
+                        hide()
+                        return
+                    }
                 }
 
                 val remaining = endTimeMillis - System.currentTimeMillis()
