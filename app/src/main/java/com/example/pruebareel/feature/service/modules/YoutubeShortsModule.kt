@@ -21,12 +21,16 @@ import com.example.pruebareel.feature.service.ReelGuardService
 /**
  * YouTube Shorts: cuenta los Shorts seguidos y los del día (igual que Reels y TikTok).
  *
- * Detección (heurística, depende del diseño actual de YouTube — ver docs/youtube_shorts.jpeg):
- * - **Estamos en el reproductor de Shorts** si hay una barra de progreso (SeekBar) y el botón
- *   "Remix" de la columna derecha (o un nodo con "Short" en su descripción, como respaldo).
- * - **Pasó un Short** cuando scrollea un contenedor que ocupa casi toda la pantalla.
+ * Lo que expone YouTube en el reproductor de Shorts (ver docs/logcat_youtube.txt):
+ * - Un nodo con descripción **"Progreso del video"** y una **SeekBar** cuya descripción trae
+ *   la duración ("0 minutos 3 segundos de 0 minutos 51 segundos").
+ * - Un **RecyclerView que ocupa casi toda la pantalla** (el carrusel vertical de Shorts).
+ * - La columna derecha (Me gusta, Remix…) NO aparece en el árbol de accesibilidad.
  *
- * Además, si un Short pasa a ventana flotante (picture-in-picture) al tocar Inicio, la cierra.
+ * YouTube manda muy pocos eventos al pasar de Short (a veces ninguno de scroll), así que un
+ * Short nuevo se cuenta con cualquiera de estas dos señales:
+ * 1. Scroll del carrusel a pantalla completa.
+ * 2. Cambia la duración que muestra la barra de progreso (otro video).
  *
  * Si no cuenta bien, filtrar Logcat por "ReelGuard-YouTube".
  */
@@ -34,9 +38,12 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
 
     companion object {
         private const val TAG = "ReelGuard-YouTube"
-        private const val DEBOUNCE_TIME_MS = 500L
-        private const val RESET_GRACE_MS = 3_000L
+        /** Las dos señales pueden llegar separadas por la carga del video: se cuentan una vez. */
+        private const val DEBOUNCE_TIME_MS = 1_500L
         private const val FULLSCREEN_RATIO = 0.8f
+
+        private val PROGRESS_LABELS = setOf("progreso del video", "video progress")
+        private val LOADING_LABELS = setOf("espera", "loading", "cargando")
 
         /** Si se vio un Short hace menos de esto y aparece la ventana flotante, se cierra. */
         private const val PIP_AFTER_SHORTS_MS = 3_000L
@@ -48,7 +55,9 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
 
     private var shortsCount = 0
     private var lastCountTime = 0L
+    private var wasInShorts = false
     private var lastShortsSeenTime = 0L
+    private var lastDuration: String? = null
     private var lastPipDismissTime = 0L
 
     override fun isEnabled(settings: AppSettings) = settings.shortsEnabled
@@ -62,111 +71,113 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
 
     override fun onAppEvent(event: AccessibilityEvent, root: AccessibilityNodeInfo, now: Long) {
         val s = host.settings ?: return
-        val inShorts = isShortsPlayer(root)
-        debugDump(event, root, inShorts, now)
-        val justEntered = inShorts && now - lastShortsSeenTime > RESET_GRACE_MS
+        val type = event.eventType
+        val inShorts = isShortsScreen(root)
+        val duration = if (inShorts) videoDuration(root) else null
+
+        if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED || duration != lastDuration) {
+            Log.d(TAG, "evento=${AccessibilityEvent.eventTypeToString(type)} inShorts=$inShorts duracion=$duration count=$shortsCount")
+        }
 
         if (inShorts) {
             lastShortsSeenTime = now
-            // Horario sin videos o límite diario: no se deja ni empezar.
-            if (justEntered && host.enforceUsageRules(target, dailyLimitReached(s))) {
-                host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-                return
+            // Al entrar a Shorts: horario sin videos o límite diario → no se deja ni empezar.
+            if (!wasInShorts) {
+                wasInShorts = true
+                if (host.enforceUsageRules(target, dailyLimitReached(s))) {
+                    host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                    return
+                }
             }
         }
 
-        when (event.eventType) {
+        when (type) {
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 val source = event.source
-                val fullScreen = source != null && isFullScreen(source)
-                if (!inShorts || !fullScreen) return
-
-                if (now - lastCountTime > DEBOUNCE_TIME_MS) {
-                    lastCountTime = now
-                    shortsCount++
-                    host.addStat(StatMetric.YT_SHORTS)
-
-                    val reason = when {
-                        shortsCount >= s.shortsLimit -> LockReason.STREAK
-                        dailyLimitReached(s) -> LockReason.DAILY_LIMIT
-                        else -> null
-                    }
-                    if (reason != null) {
-                        // Se sale de Shorts para que el video deje de reproducirse y se bloquea.
-                        host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-                        host.requestLock(target, reason)
-                    }
-                }
+                if (inShorts && source != null && isFullScreen(source)) countShort(s, now, "scroll")
             }
 
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                // Abrir comentarios no reinicia el contador; salir de Shorts sí (con tiempo de gracia).
-                if (!inShorts && !root.looksLikeCommentsSheet() &&
-                    now - lastShortsSeenTime > RESET_GRACE_MS
+                if (duration != null) {
+                    val previous = lastDuration
+                    lastDuration = duration
+                    if (previous != null && previous != duration) countShort(s, now, "otra duración")
+                }
+                // Salió de Shorts de verdad (no es la pantalla de carga ni los comentarios).
+                if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+                    !inShorts && !isLoading(root) && !root.looksLikeCommentsSheet()
                 ) {
-                    shortsCount = 0
+                    resetSession()
                 }
             }
         }
     }
 
+    private fun countShort(s: AppSettings, now: Long, why: String) {
+        if (now - lastCountTime < DEBOUNCE_TIME_MS) return
+        lastCountTime = now
+        shortsCount++
+        host.addStat(StatMetric.YT_SHORTS)
+        Log.d(TAG, "Short contado ($why): $shortsCount / ${s.shortsLimit}")
+
+        val reason = when {
+            shortsCount >= s.shortsLimit -> LockReason.STREAK
+            dailyLimitReached(s) -> LockReason.DAILY_LIMIT
+            else -> null
+        }
+        if (reason != null) {
+            // Se sale de Shorts para que el video deje de reproducirse y se bloquea.
+            host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+            host.requestLock(target, reason)
+        }
+    }
+
+    private fun resetSession() {
+        if (wasInShorts) Log.d(TAG, "Salió de Shorts: contador a 0")
+        shortsCount = 0
+        wasInShorts = false
+        lastDuration = null
+    }
+
     override fun onLocked() {
         shortsCount = 0
+        lastDuration = null
     }
 
     private fun dailyLimitReached(s: AppSettings) =
         s.shortsDailyLimit > 0 && host.todayStat(StatMetric.YT_SHORTS) >= s.shortsDailyLimit
 
-    private fun isShortsPlayer(root: AccessibilityNodeInfo): Boolean {
-        val hasSeekBar = root.findAny { it.className == "android.widget.SeekBar" }
-        if (!hasSeekBar) return false
-        return root.findAny { node ->
-            val text = node.text?.toString()?.trim()
-            val desc = node.contentDescription?.toString()?.trim()
-            text.equals("Remix", ignoreCase = true) ||
-                desc?.startsWith("Remix", ignoreCase = true) == true ||
-                (desc != null && desc.contains("Short", ignoreCase = true) && !desc.equals("Shorts", ignoreCase = true))
+    // ---------- Detección ----------
+
+    /** Reproductor de Shorts: barra/indicador de progreso + carrusel a pantalla completa. */
+    private fun isShortsScreen(root: AccessibilityNodeInfo): Boolean {
+        val hasProgress = root.findAny { n ->
+            n.className == "android.widget.SeekBar" ||
+                n.contentDescription?.toString()?.trim()?.lowercase() in PROGRESS_LABELS
+        }
+        if (!hasProgress) return false
+        return root.findAny { n ->
+            val cls = n.className?.toString() ?: return@findAny false
+            (cls.contains("RecyclerView") || cls.contains("ViewPager")) && isFullScreen(n)
         }
     }
 
-    // ---------- Diagnóstico (Logcat: ReelGuard-YouTube) ----------
-
-    private var lastDumpTime = 0L
-
-    /**
-     * Escribe en Logcat qué está viendo el servicio: tipo de evento, si detectó Shorts, y
-     * (como mucho cada 2 s) la lista de textos / descripciones / clases de la pantalla.
-     * Sirve para ajustar la detección si YouTube cambia su diseño.
-     */
-    private fun debugDump(event: AccessibilityEvent, root: AccessibilityNodeInfo, inShorts: Boolean, now: Long) {
-        val type = AccessibilityEvent.eventTypeToString(event.eventType)
-        val src = event.source
-        val r = Rect().also { src?.getBoundsInScreen(it) }
-        Log.d(
-            TAG,
-            "evento=$type inShorts=$inShorts count=$shortsCount " +
-                "srcClass=${src?.className} srcAlto=${r.height()} pantallaAlto=${host.resources.displayMetrics.heightPixels}"
-        )
-        if (now - lastDumpTime < 2_000) return
-        lastDumpTime = now
-
-        val lines = mutableListOf<String>()
-        val stack = ArrayDeque<AccessibilityNodeInfo>().apply { add(root) }
-        while (stack.isNotEmpty() && lines.size < 60) {
-            val n = stack.removeLast()
-            val cls = n.className?.toString()?.substringAfterLast('.') ?: "?"
-            val text = n.text?.toString()?.take(40)
-            val desc = n.contentDescription?.toString()?.take(40)
-            val id = n.viewIdResourceName?.substringAfterLast('/')
-            if (text != null || desc != null || id != null || cls.contains("SeekBar") ||
-                cls.contains("Pager") || cls.contains("Recycler")
-            ) {
-                lines += "  [$cls] id=$id text=$text desc=$desc"
-            }
-            for (i in 0 until n.childCount) n.getChild(i)?.let { stack.add(it) }
+    /** "0 minutos 51 segundos": la parte de la descripción de la SeekBar después de " de " / " of ". */
+    private fun videoDuration(root: AccessibilityNodeInfo): String? {
+        var result: String? = null
+        root.findAny { n ->
+            if (n.className != "android.widget.SeekBar") return@findAny false
+            val desc = n.contentDescription?.toString() ?: return@findAny false
+            val idx = maxOf(desc.lastIndexOf(" de "), desc.lastIndexOf(" of "))
+            result = if (idx >= 0) desc.substring(idx + 4).trim() else null
+            true
         }
-        Log.d(TAG, "---- pantalla (${lines.size} nodos) ----")
-        lines.forEach { Log.d(TAG, it) } // una línea por nodo: Logcat corta los mensajes largos
+        return result
+    }
+
+    private fun isLoading(root: AccessibilityNodeInfo): Boolean = root.findAny { n ->
+        n.contentDescription?.toString()?.trim()?.lowercase() in LOADING_LABELS
     }
 
     private fun isFullScreen(node: AccessibilityNodeInfo): Boolean {

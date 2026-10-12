@@ -35,7 +35,7 @@ Esto significa que su funcionamiento es **frágil por naturaleza**. Si alguna de
 | App | Módulo | Cómo detecta |
 | --- | --- | --- |
 | Instagram | `InstagramModule` | Scroll de un `ViewPager` + nodos con descripción "Reel de …" |
-| YouTube | `YoutubeShortsModule` | `SeekBar` + botón "Remix" + scroll de un contenedor a pantalla completa ([captura de referencia](./docs/youtube_shorts.jpeg)); ventana flotante vía lista de ventanas |
+| YouTube | `YoutubeShortsModule` | "Progreso del video" / `SeekBar` + carrusel a pantalla completa; cuenta por scroll o por cambio de duración del video ([logcat de referencia](./docs/logcat_youtube.txt)) ([captura de referencia](./docs/youtube_shorts.jpeg)); ventana flotante vía lista de ventanas |
 | TikTok | `TikTokModule` | Pestañas "Para ti" / "Siguiendo" + scroll de un contenedor a pantalla completa ([captura de referencia](./docs/tiktok_feed.jpeg)) |
 
 Para depurar, filtrar Logcat por `ReelGuard-TikTok` o `ReelGuard-YouTube`.
