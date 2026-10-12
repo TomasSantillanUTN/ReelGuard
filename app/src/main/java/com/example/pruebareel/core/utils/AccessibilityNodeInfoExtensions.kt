@@ -33,6 +33,29 @@ fun AccessibilityNodeInfo.looksLikeCommentsSheet(): Boolean = findAny { node ->
     }
 }
 
+/**
+ * Como [findAny], pero solo mira lo que está VISIBLE en pantalla. Instagram y TikTok dejan
+ * cargadas pantallas que no se ven (otras pestañas, el feed detrás del perfil, etc.); esas
+ * ramas se saltean enteras.
+ */
+fun AccessibilityNodeInfo.findAnyVisible(
+    predicate: (AccessibilityNodeInfo) -> Boolean
+): Boolean {
+    val stack = ArrayDeque<AccessibilityNodeInfo>()
+    stack.add(this)
+
+    while (stack.isNotEmpty()) {
+        val node = stack.removeLast()
+        if (!node.isVisibleToUser) continue
+        if (predicate(node)) return true
+
+        for (i in 0 until node.childCount) {
+            node.getChild(i)?.let { stack.add(it) }
+        }
+    }
+    return false
+}
+
 /** Primer nodo que cumple [predicate] (o null). */
 fun AccessibilityNodeInfo.findFirst(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
     var found: AccessibilityNodeInfo? = null
@@ -49,7 +72,7 @@ fun AccessibilityNodeInfo.clickByLabel(labels: Set<String>): Boolean {
     val target = findFirst { n ->
         val t = n.text?.toString()?.trim()?.lowercase()
         val d = n.contentDescription?.toString()?.trim()?.lowercase()
-        t in labels || d in labels
+        n.isVisibleToUser && (t in labels || d in labels)
     } ?: return false
     var node: AccessibilityNodeInfo? = target
     while (node != null && !node.isClickable) node = node.parent
@@ -61,9 +84,9 @@ fun AccessibilityNodeInfo.hasFullScreenPager(
     screenHeight: Int,
     classFilter: (String) -> Boolean = { it.contains("ViewPager") || it.contains("RecyclerView") },
     ratio: Float = 0.8f
-): Boolean = findAny { n ->
-    val cls = n.className?.toString() ?: return@findAny false
-    if (!classFilter(cls)) return@findAny false
+): Boolean = findAnyVisible { n ->
+    val cls = n.className?.toString() ?: return@findAnyVisible false
+    if (!classFilter(cls)) return@findAnyVisible false
     val r = android.graphics.Rect()
     n.getBoundsInScreen(r)
     screenHeight > 0 && r.height() >= screenHeight * ratio

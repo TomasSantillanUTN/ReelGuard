@@ -7,7 +7,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import com.example.pruebareel.core.lock.LockReason
 import com.example.pruebareel.core.lock.LockTarget
 import com.example.pruebareel.core.utils.clickByLabel
-import com.example.pruebareel.core.utils.findAny
+import com.example.pruebareel.core.utils.findAnyVisible
 import com.example.pruebareel.core.utils.looksLikeCommentsSheet
 import com.example.pruebareel.data.preferences.AppSettings
 import com.example.pruebareel.data.stats.StatMetric
@@ -116,7 +116,8 @@ class TikTokModule(private val host: ReelGuardService) : BlockerModule {
         return screenHeight > 0 && r.height() >= screenHeight * FULLSCREEN_RATIO
     }
 
-    private fun isInFeed(root: AccessibilityNodeInfo): Boolean = root.findAny { node ->
+    /** Solo nodos visibles: al ir a Perfil, TikTok deja el feed cargado detrás. */
+    private fun isInFeed(root: AccessibilityNodeInfo): Boolean = root.findAnyVisible { node ->
         val t = (node.text ?: node.contentDescription)?.toString()?.trim()?.lowercase()
         t != null && t in FEED_TABS
     }

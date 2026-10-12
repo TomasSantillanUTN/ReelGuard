@@ -1,11 +1,12 @@
 package com.example.pruebareel.feature.service.modules
 
+import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.pruebareel.core.lock.LockReason
 import com.example.pruebareel.core.lock.LockTarget
-import com.example.pruebareel.core.utils.findAny
+import com.example.pruebareel.core.utils.findAnyVisible
 import com.example.pruebareel.core.utils.hasFullScreenPager
 import com.example.pruebareel.core.utils.looksLikeCommentsSheet
 import com.example.pruebareel.data.preferences.AppSettings
@@ -16,8 +17,8 @@ import com.example.pruebareel.feature.service.ReelGuardService
 /**
  * Instagram Reels: cuenta los Reels seguidos y los del día.
  *
- * **Sección de Reels** = hay un ViewPager que ocupa casi toda la pantalla Y nodos con
- * descripción "Reel de …". Ojo: los Reels que aparecen en el feed principal también tienen
+ * **Sección de Reels** = hay un ViewPager VISIBLE que ocupa casi toda la pantalla Y nodos
+ * VISIBLES con descripción "Reel de …" (Instagram deja otras pestañas cargadas sin mostrarlas). Ojo: los Reels que aparecen en el feed principal también tienen
  * "Reel de …", pero ahí no hay un ViewPager a pantalla completa, así que el feed (y abrir los
  * comentarios desde el feed) NO cuenta como sección de Reels.
  *
@@ -32,6 +33,8 @@ class InstagramModule(private val host: ReelGuardService) : BlockerModule {
         private const val RESET_GRACE_MS = 3_000L
         /** Los cambios de contenido llegan muchísimas veces por segundo: se revisan cada tanto. */
         private const val CONTENT_CHECK_INTERVAL_MS = 700L
+        /** El Reel tiene que ocupar al menos este % del alto de pantalla para ser la sección de Reels. */
+        private const val REEL_MIN_HEIGHT_RATIO = 0.65f
     }
 
     override val target = LockTarget.INSTAGRAM
@@ -55,9 +58,13 @@ class InstagramModule(private val host: ReelGuardService) : BlockerModule {
         }
 
         val inReels = isReelsSection(root)
-        if (inReels != wasInReels) {
+        if (inReels != wasInReels || type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             wasInReels = inReels
-            Log.d(TAG, "seccion de Reels: $inReels (count=$reelCount)")
+            Log.d(
+                TAG,
+                "seccion de Reels: $inReels (count=$reelCount, altoReel=$lastLabelHeight, " +
+                    "pantalla=${host.resources.displayMetrics.heightPixels})"
+            )
         }
 
         // Horario sin videos / límite diario: solo se saca al usuario de la sección de Reels.
@@ -103,16 +110,41 @@ class InstagramModule(private val host: ReelGuardService) : BlockerModule {
     private fun dailyLimitReached(s: AppSettings) =
         s.reelsDailyLimit > 0 && host.todayStat(StatMetric.IG_REELS) >= s.reelsDailyLimit
 
-    private fun isReelsSection(root: AccessibilityNodeInfo): Boolean =
-        hasReelLabel(root) && root.hasFullScreenPager(
-            screenHeight = host.resources.displayMetrics.heightPixels,
-            classFilter = { it.contains("ViewPager", ignoreCase = true) }
-        )
+    /**
+     * Sección de Reels: además del ViewPager a pantalla completa (que la pantalla principal de
+     * Instagram también tiene, porque se desliza hacia los mensajes / la cámara), el video con
+     * "Reel de …" tiene que ser GRANDE. En el feed un Reel ocupa cerca de la mitad de la
+     * pantalla; en la sección de Reels ocupa casi toda.
+     */
+    private fun isReelsSection(root: AccessibilityNodeInfo): Boolean {
+        val screenHeight = host.resources.displayMetrics.heightPixels
+        val labelHeight = reelLabelHeight(root)
+        val result = screenHeight > 0 && labelHeight >= screenHeight * REEL_MIN_HEIGHT_RATIO &&
+            root.hasFullScreenPager(
+                screenHeight = screenHeight,
+                classFilter = { it.contains("ViewPager", ignoreCase = true) }
+            )
+        lastLabelHeight = labelHeight
+        return result
+    }
+
+    private var lastLabelHeight = 0
+
+    /** Alto (px) del nodo visible más grande con descripción "Reel de …" (0 si no hay). */
+    private fun reelLabelHeight(root: AccessibilityNodeInfo): Int {
+        var max = 0
+        val r = Rect()
+        root.findAnyVisible {
+            if (it.contentDescription?.toString()?.startsWith("Reel de ") == true) {
+                it.getBoundsInScreen(r)
+                if (r.height() > max) max = r.height()
+            }
+            false // recorrer todo
+        }
+        return max
+    }
 
     private fun isFromViewPager(event: AccessibilityEvent): Boolean =
         event.source?.className?.toString()?.contains("ViewPager", ignoreCase = true) == true
 
-    private fun hasReelLabel(root: AccessibilityNodeInfo): Boolean = root.findAny {
-        it.contentDescription?.toString()?.startsWith("Reel de ") == true
-    }
 }
