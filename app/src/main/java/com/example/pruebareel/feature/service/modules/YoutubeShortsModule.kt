@@ -27,10 +27,9 @@ import com.example.pruebareel.feature.service.ReelGuardService
  * - Un **RecyclerView que ocupa casi toda la pantalla** (el carrusel vertical de Shorts).
  * - La columna derecha (Me gusta, Remix…) NO aparece en el árbol de accesibilidad.
  *
- * YouTube manda muy pocos eventos al pasar de Short (a veces ninguno de scroll), así que un
- * Short nuevo se cuenta con cualquiera de estas dos señales:
- * 1. Scroll del carrusel a pantalla completa.
- * 2. Cambia la duración que muestra la barra de progreso (otro video).
+ * YouTube manda muy pocos eventos de scroll al pasar de Short, así que un Short nuevo se
+ * detecta porque la barra de progreso desaparece un instante (carga) y vuelve, o porque cambia
+ * la duración del video. El scroll queda solo como respaldo.
  *
  * Si no cuenta bien, filtrar Logcat por "ReelGuard-YouTube".
  */
@@ -38,8 +37,8 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
 
     companion object {
         private const val TAG = "ReelGuard-YouTube"
-        /** Las dos señales pueden llegar separadas por la carga del video: se cuentan una vez. */
-        private const val DEBOUNCE_TIME_MS = 1_500L
+        /** Solo para evitar contar dos veces el mismo parpadeo de la barra. */
+        private const val DEBOUNCE_TIME_MS = 250L
         private const val FULLSCREEN_RATIO = 0.8f
 
         private val PROGRESS_LABELS = setOf("progreso del video", "video progress")
@@ -58,6 +57,8 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
     private var wasInShorts = false
     private var lastShortsSeenTime = 0L
     private var lastDuration: String? = null
+    /** Se vio la barra de progreso desaparecer (cambio de Short en curso). */
+    private var sawGap = false
     private var lastPipDismissTime = 0L
 
     override fun isEnabled(settings: AppSettings) = settings.shortsEnabled
@@ -91,26 +92,35 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
             }
         }
 
-        when (type) {
-            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                val source = event.source
-                if (inShorts && source != null && isFullScreen(source)) countShort(s, now, "scroll")
+        // ---- Conteo ----
+        // Al pasar de Short, la barra de progreso desaparece un instante (duración = null, se ve
+        // "Espera") y vuelve con el video nuevo. Ese "hueco" es la señal más confiable: funciona
+        // aunque se pase muy rápido y aunque dos Shorts duren lo mismo. Un Short que se repite
+        // en loop no genera hueco, así que no se cuenta dos veces.
+        if (inShorts || wasInShorts) {
+            if (duration == null) {
+                if (lastDuration != null && !root.looksLikeCommentsSheet()) sawGap = true
+            } else {
+                when {
+                    lastDuration == null -> countShort(s, now, "primer Short")
+                    sawGap || duration != lastDuration -> countShort(s, now, "Short nuevo")
+                }
+                lastDuration = duration
+                sawGap = false
             }
+        }
 
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                if (duration != null) {
-                    val previous = lastDuration
-                    lastDuration = duration
-                    if (previous != null && previous != duration) countShort(s, now, "otra duración")
-                }
-                // Salió de Shorts de verdad (no es la pantalla de carga ni los comentarios).
-                if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-                    !inShorts && !isLoading(root) && !root.looksLikeCommentsSheet()
-                ) {
-                    resetSession()
-                }
-            }
+        // Respaldo: si YouTube no mostrara la duración, se cuenta por scroll del carrusel.
+        if (type == AccessibilityEvent.TYPE_VIEW_SCROLLED && inShorts && lastDuration == null) {
+            val source = event.source
+            if (source != null && isFullScreen(source)) countShort(s, now, "scroll")
+        }
+
+        // Salió de Shorts de verdad (no es la pantalla de carga ni los comentarios).
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            !inShorts && !isLoading(root) && !root.looksLikeCommentsSheet()
+        ) {
+            resetSession()
         }
     }
 
@@ -121,9 +131,13 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
         host.addStat(StatMetric.YT_SHORTS)
         Log.d(TAG, "Short contado ($why): $shortsCount / ${s.shortsLimit}")
 
+        // Acá se cuenta también el Short que se está por ver (el primero cuenta como 1), así que
+        // se bloquea al EMPEZAR el siguiente al límite: con límite 5 se ven 5 Shorts completos,
+        // igual que en Reels y TikTok.
         val reason = when {
-            shortsCount >= s.shortsLimit -> LockReason.STREAK
-            dailyLimitReached(s) -> LockReason.DAILY_LIMIT
+            shortsCount > s.shortsLimit -> LockReason.STREAK
+            s.shortsDailyLimit > 0 && host.todayStat(StatMetric.YT_SHORTS) > s.shortsDailyLimit ->
+                LockReason.DAILY_LIMIT
             else -> null
         }
         if (reason != null) {
@@ -138,11 +152,13 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
         shortsCount = 0
         wasInShorts = false
         lastDuration = null
+        sawGap = false
     }
 
     override fun onLocked() {
         shortsCount = 0
         lastDuration = null
+        sawGap = false
     }
 
     private fun dailyLimitReached(s: AppSettings) =
