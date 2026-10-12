@@ -1,58 +1,94 @@
 package com.example.pruebareel.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+private val LightColors = lightColorScheme(
+    primary = Sage40,
     onPrimary = Color.White,
+    primaryContainer = Sage90,
+    onPrimaryContainer = Sage10,
+    secondary = Ink40,
     onSecondary = Color.White,
+    secondaryContainer = Ink90,
+    onSecondaryContainer = InkText,
+    tertiary = Clay40,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiaryContainer = Clay90,
+    onTertiaryContainer = Clay30,
+    background = Paper,
+    onBackground = InkText,
+    surface = PaperCard,
+    onSurface = InkText,
+    surfaceVariant = PaperHigh,
+    onSurfaceVariant = InkMuted,
+    outline = Outline,
+    outlineVariant = Outline
 )
 
+private val DarkColors = darkColorScheme(
+    primary = Sage80,
+    onPrimary = Sage10,
+    primaryContainer = Sage30,
+    onPrimaryContainer = Sage90,
+    secondary = Ink80,
+    onSecondary = Ink30,
+    secondaryContainer = Ink30,
+    onSecondaryContainer = NightText,
+    tertiary = Clay80,
+    onTertiary = Clay30,
+    tertiaryContainer = Clay30,
+    onTertiaryContainer = Clay90,
+    background = Night,
+    onBackground = NightText,
+    surface = NightCard,
+    onSurface = NightText,
+    surfaceVariant = NightHigh,
+    onSurfaceVariant = NightMuted,
+    outline = NightOutline,
+    outlineVariant = NightOutline
+)
+
+/** Colores de cada app para el gráfico y los indicadores (mismo orden siempre). */
+@Immutable
+data class AppColors(
+    val instagram: Color,
+    val youtube: Color,
+    val tiktok: Color
+)
+
+val LocalAppColors = staticCompositionLocalOf {
+    AppColors(SeriesInstagramLight, SeriesYoutubeLight, SeriesTiktokLight)
+}
+
+/**
+ * Tema de ReelGuard.
+ *
+ * Se usa siempre la paleta propia (sin "dynamic color" de Android 12+), para que la app se vea
+ * igual en todos los celulares y los colores del gráfico combinen con el resto.
+ */
 @Composable
 fun PruebareelTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val appColors = if (darkTheme) {
+        AppColors(SeriesInstagramDark, SeriesYoutubeDark, SeriesTiktokDark)
+    } else {
+        AppColors(SeriesInstagramLight, SeriesYoutubeLight, SeriesTiktokLight)
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppColors provides appColors) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColors else LightColors,
+            typography = Typography,
+            content = content
+        )
+    }
 }

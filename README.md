@@ -6,11 +6,11 @@ ReelGuard es una aplicación de Android que te ayuda a tomar el control de tu co
 
 ## 🌟 Características Principales
 
-- **Límite de videos seguidos:** máximo de Reels / TikToks consecutivos y tiempo máximo seguido en Shorts. Al llegar, aparece una **pantalla de bloqueo con cuenta regresiva** (de 5 segundos a 10 minutos).
+- **Límite de videos seguidos:** máximo de Reels, Shorts y TikToks consecutivos. Al llegar, aparece una **pantalla de bloqueo con cuenta regresiva** (de 5 segundos a 10 minutos).
 - **Bloquear o no los botones del sistema:** con la opción activada no se puede salir hasta que termine la cuenta regresiva. Desactivada, la pantalla de bloqueo no tapa Inicio / Volver / Recientes y desaparece al salir de la app.
-- **Límite diario por app:** total de Reels, TikToks o minutos de Shorts por día. Al llegar, la app queda bloqueada hasta las 00:00.
+- **Límite diario por app:** total de Reels, Shorts o TikToks por día. Al llegar, la app queda bloqueada hasta las 00:00.
 - **Horario sin videos:** por ejemplo de 23:00 a 07:00 (puede cruzar la medianoche).
-- **Estadísticas:** videos vistos, minutos de Shorts y bloqueos de hoy y de los últimos 7 días.
+- **Estadísticas:** videos vistos y bloqueos de hoy (comparado con tu promedio) y gráfico de barras de los últimos 7 días por app.
 - **Estado de permisos:** la pantalla principal muestra si el servicio de accesibilidad y el permiso de superposición están activos.
 - **YouTube Shorts en ventana flotante:** si un Short se minimiza al tocar Inicio, la ventana se cierra.
 - **Los comentarios no reinician el contador** (Instagram y TikTok).
@@ -35,10 +35,10 @@ Esto significa que su funcionamiento es **frágil por naturaleza**. Si alguna de
 | App | Módulo | Cómo detecta |
 | --- | --- | --- |
 | Instagram | `InstagramModule` | Scroll de un `ViewPager` + nodos con descripción "Reel de …" |
-| YouTube | `YoutubeShortsModule` | Nodo con "Short" + `SeekBar`; ventana flotante vía lista de ventanas |
+| YouTube | `YoutubeShortsModule` | `SeekBar` + botón "Remix" + scroll de un contenedor a pantalla completa ([captura de referencia](./docs/youtube_shorts.jpeg)); ventana flotante vía lista de ventanas |
 | TikTok | `TikTokModule` | Pestañas "Para ti" / "Siguiendo" + scroll de un contenedor a pantalla completa ([captura de referencia](./docs/tiktok_feed.jpeg)) |
 
-Para depurar TikTok, filtrar Logcat por `ReelGuard-TikTok`.
+Para depurar, filtrar Logcat por `ReelGuard-TikTok` o `ReelGuard-YouTube`.
 
 ---
 

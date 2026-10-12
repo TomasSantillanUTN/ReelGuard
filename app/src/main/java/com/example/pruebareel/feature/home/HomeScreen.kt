@@ -1,25 +1,29 @@
 package com.example.pruebareel.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -32,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,7 +46,12 @@ import com.example.pruebareel.R
 import com.example.pruebareel.data.preferences.SettingsRepository
 import com.example.pruebareel.data.stats.DayStats
 import com.example.pruebareel.data.stats.StatMetric
+import com.example.pruebareel.feature.home.components.AppDot
+import com.example.pruebareel.feature.home.components.WeeklyChart
+import com.example.pruebareel.ui.theme.LocalAppColors
+import java.util.Calendar
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /** Todas las acciones que puede disparar la pantalla principal. */
 data class HomeActions(
@@ -51,8 +61,8 @@ data class HomeActions(
     val onReelsLimitChange: (Int) -> Unit,
     val onReelsDailyLimitChange: (Int) -> Unit,
     val onShortsEnabledChange: (Boolean) -> Unit,
-    val onShortsTimeChange: (Int) -> Unit,
-    val onShortsDailyMinutesChange: (Int) -> Unit,
+    val onShortsLimitChange: (Int) -> Unit,
+    val onShortsDailyLimitChange: (Int) -> Unit,
     val onTiktokEnabledChange: (Boolean) -> Unit,
     val onTiktokLimitChange: (Int) -> Unit,
     val onTiktokDailyLimitChange: (Int) -> Unit,
@@ -62,76 +72,64 @@ data class HomeActions(
     val onQuietHoursChange: (Int, Int) -> Unit
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val CardShape = RoundedCornerShape(24.dp)
+
 @Composable
 fun HomeScreen(state: HomeUiState, actions: HomeActions) {
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(id = R.string.home_screen_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            )
-        }
-    ) { padding ->
+    val colors = LocalAppColors.current
+
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.home_screen_subtitle),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Header()
+            PermissionBanner(state.permissions, actions)
 
-            StatusCard(state.permissions, actions)
-            StatsCard(state.week)
+            TodayCard(state)
+            WeekCard(state.week)
 
+            SectionLabel(stringResource(R.string.section_limits))
             AppCard(
+                color = colors.instagram,
                 title = stringResource(R.string.reels_card_title),
                 subtitle = stringResource(R.string.reels_card_subtitle),
                 enabled = state.reelsEnabled,
                 onEnabledChange = actions.onReelsEnabledChange,
                 sliderLabel = stringResource(R.string.reels_card_slider_label, state.reelsLimit),
                 sliderValue = state.reelsLimit,
-                sliderRange = 1..20,
                 onSliderChange = actions.onReelsLimitChange,
                 dailyLabel = stringResource(R.string.daily_limit_reels),
                 dailyValue = state.reelsDailyLimit,
                 loaded = state.loaded,
                 onDailySave = actions.onReelsDailyLimitChange
             )
-
             AppCard(
+                color = colors.youtube,
                 title = stringResource(R.string.shorts_card_title),
                 subtitle = stringResource(R.string.shorts_card_subtitle),
                 enabled = state.shortsEnabled,
                 onEnabledChange = actions.onShortsEnabledChange,
-                sliderLabel = stringResource(R.string.shorts_card_slider_label, state.shortsTimeSeconds),
-                sliderValue = state.shortsTimeSeconds,
-                sliderRange = 5..180,
-                sliderStep = 5,
-                onSliderChange = actions.onShortsTimeChange,
+                sliderLabel = stringResource(R.string.shorts_card_slider_label, state.shortsLimit),
+                sliderValue = state.shortsLimit,
+                onSliderChange = actions.onShortsLimitChange,
                 dailyLabel = stringResource(R.string.daily_limit_shorts),
-                dailyValue = state.shortsDailyMinutes,
+                dailyValue = state.shortsDailyLimit,
                 loaded = state.loaded,
-                onDailySave = actions.onShortsDailyMinutesChange
+                onDailySave = actions.onShortsDailyLimitChange
             )
-
             AppCard(
+                color = colors.tiktok,
                 title = stringResource(R.string.tiktok_card_title),
                 subtitle = stringResource(R.string.tiktok_card_subtitle),
                 enabled = state.tiktokEnabled,
                 onEnabledChange = actions.onTiktokEnabledChange,
                 sliderLabel = stringResource(R.string.tiktok_card_slider_label, state.tiktokLimit),
                 sliderValue = state.tiktokLimit,
-                sliderRange = 1..20,
                 onSliderChange = actions.onTiktokLimitChange,
                 dailyLabel = stringResource(R.string.daily_limit_tiktok),
                 dailyValue = state.tiktokDailyLimit,
@@ -139,149 +137,332 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions) {
                 onDailySave = actions.onTiktokDailyLimitChange
             )
 
+            SectionLabel(stringResource(R.string.section_lock))
             LockSettingsCard(state, actions)
             QuietHoursCard(state, actions)
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
-                text = stringResource(id = R.string.home_privacy_disclaimer),
-                style = MaterialTheme.typography.bodySmall
+                text = stringResource(R.string.home_privacy_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
             )
         }
     }
 }
 
 // =========================================================================================
-// Tarjetas
+// Encabezado y estado
 // =========================================================================================
 
 @Composable
-private fun SectionCard(content: @Composable () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) { content() }
+private fun Header() {
+    val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+    val greeting = when (hour) {
+        in 6..12 -> stringResource(R.string.greeting_morning)
+        in 13..19 -> stringResource(R.string.greeting_afternoon)
+        else -> stringResource(R.string.greeting_night)
+    }
+    Column {
+        Text(
+            text = greeting,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
+/** Si todo está activo, una píldora discreta. Si falta algo, una tarjeta con botones. */
 @Composable
-private fun CardTitle(text: String) {
-    Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-}
-
-/** Estado de los permisos, con botones para ir a activarlos. */
-@Composable
-private fun StatusCard(p: PermissionStatus, actions: HomeActions) {
-    SectionCard {
-        CardTitle(stringResource(R.string.status_title))
-
-        StatusRow(
-            ok = p.accessibilityEnabled,
-            okText = stringResource(R.string.status_service_ok),
-            missingText = stringResource(R.string.status_service_missing),
-            buttonText = stringResource(R.string.status_service_button),
-            onClick = actions.onOpenAccessibilitySettings
-        )
-        StatusRow(
-            ok = p.overlayGranted,
-            okText = stringResource(R.string.status_overlay_ok),
-            missingText = stringResource(R.string.status_overlay_missing),
-            buttonText = stringResource(R.string.status_overlay_button),
-            onClick = actions.onOpenOverlaySettings
-        )
-        if (!p.accessibilityEnabled || !p.overlayGranted) {
+private fun PermissionBanner(p: PermissionStatus, actions: HomeActions) {
+    if (p.accessibilityEnabled && p.overlayGranted) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(50))
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+        ) {
+            AppDot(MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(8.dp))
             Text(
-                text = stringResource(R.string.status_help),
-                style = MaterialTheme.typography.bodySmall
+                text = stringResource(R.string.status_all_ok),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
+        return
     }
-}
 
-@Composable
-private fun StatusRow(
-    ok: Boolean,
-    okText: String,
-    missingText: String,
-    buttonText: String,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+    Card(
+        shape = CardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = if (ok) "✅ $okText" else "⚠️ $missingText",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-        if (!ok) {
-            OutlinedButton(onClick = onClick) { Text(buttonText) }
-        }
-    }
-}
-
-/** Uso de hoy y de los últimos 7 días. */
-@Composable
-private fun StatsCard(week: List<DayStats>) {
-    SectionCard {
-        CardTitle(stringResource(R.string.stats_title))
-
-        val today = week.firstOrNull()
-        if (today == null) {
-            Text(stringResource(R.string.stats_empty), style = MaterialTheme.typography.bodySmall)
-            return@SectionCard
-        }
-
-        Text(stringResource(R.string.stats_today), fontWeight = FontWeight.SemiBold)
-        Text(dayLine(today), style = MaterialTheme.typography.bodyMedium)
-
-        HorizontalDivider()
-
-        Text(stringResource(R.string.stats_week), fontWeight = FontWeight.SemiBold)
-        val total = DayStats("total", StatMetric.entries.associateWith { m -> week.sumOf { it[m] } })
-        Text(dayLine(total), style = MaterialTheme.typography.bodyMedium)
-
-        week.forEachIndexed { index, day ->
-            val label = when (index) {
-                0 -> stringResource(R.string.stats_label_today)
-                1 -> stringResource(R.string.stats_label_yesterday)
-                else -> day.dayKey.substring(8, 10) + "/" + day.dayKey.substring(5, 7)
-            }
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = "$label: ${dayLine(day)}",
-                style = MaterialTheme.typography.bodySmall
+                text = stringResource(R.string.status_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            PermissionRow(
+                ok = p.accessibilityEnabled,
+                text = stringResource(
+                    if (p.accessibilityEnabled) R.string.status_service_ok else R.string.status_service_missing
+                ),
+                button = stringResource(R.string.status_service_button),
+                onClick = actions.onOpenAccessibilitySettings
+            )
+            PermissionRow(
+                ok = p.overlayGranted,
+                text = stringResource(
+                    if (p.overlayGranted) R.string.status_overlay_ok else R.string.status_overlay_missing
+                ),
+                button = stringResource(R.string.status_overlay_button),
+                onClick = actions.onOpenOverlaySettings
+            )
+            Text(
+                text = stringResource(R.string.status_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
             )
         }
     }
 }
 
 @Composable
-private fun dayLine(d: DayStats): String = stringResource(
-    R.string.stats_line,
-    d[StatMetric.IG_REELS],
-    d[StatMetric.TT_VIDEOS],
-    formatMinutes(d[StatMetric.YT_SHORTS_SECONDS]),
-    d[StatMetric.LOCKS]
-)
+private fun PermissionRow(ok: Boolean, text: String, button: String, onClick: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = (if (ok) "✓  " else "!  ") + text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.weight(1f)
+        )
+        if (!ok) FilledTonalButton(onClick = onClick) { Text(button) }
+    }
+}
 
-private fun formatMinutes(seconds: Int): String =
-    if (seconds < 60) "${seconds}s" else "${seconds / 60} min"
+// =========================================================================================
+// Estadísticas
+// =========================================================================================
 
-/** Tarjeta de una app: switch, límite seguido (barra) y límite diario (campo). */
+/** Número grande de hoy + comparación con el promedio + una mini-tarjeta por app. */
+@Composable
+private fun TodayCard(state: HomeUiState) {
+    val colors = LocalAppColors.current
+    val today = state.week.firstOrNull()
+    val ig = today?.get(StatMetric.IG_REELS) ?: 0
+    val yt = today?.get(StatMetric.YT_SHORTS) ?: 0
+    val tt = today?.get(StatMetric.TT_VIDEOS) ?: 0
+    val total = ig + yt + tt
+    val locks = today?.get(StatMetric.LOCKS) ?: 0
+
+    Card(
+        shape = CardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(R.string.stats_today),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = total.toString(),
+                    fontSize = 56.sp,
+                    lineHeight = 56.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.stats_videos_today),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            Text(
+                text = comparisonText(state.week, total) + " · " +
+                    stringResource(R.string.stats_locks_today, locks),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                MiniTile("Reels", ig, state.reelsDailyLimit, colors.instagram, Modifier.weight(1f))
+                MiniTile("Shorts", yt, state.shortsDailyLimit, colors.youtube, Modifier.weight(1f))
+                MiniTile("TikTok", tt, state.tiktokDailyLimit, colors.tiktok, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun comparisonText(week: List<DayStats>, today: Int): String {
+    val previous = week.drop(1)
+    val avg = if (previous.isEmpty()) 0.0 else previous.map {
+        it[StatMetric.IG_REELS] + it[StatMetric.YT_SHORTS] + it[StatMetric.TT_VIDEOS]
+    }.average()
+    if (avg < 1) return stringResource(R.string.stats_compare_none)
+    val diff = ((today - avg) / avg * 100).roundToInt()
+    return when {
+        diff <= -5 -> stringResource(R.string.stats_compare_less, -diff)
+        diff >= 5 -> stringResource(R.string.stats_compare_more, diff)
+        else -> stringResource(R.string.stats_compare_same)
+    }
+}
+
+/** Mini-tarjeta: app, cantidad de hoy y, si hay límite diario, barra de progreso. */
+@Composable
+private fun MiniTile(name: String, value: Int, dailyLimit: Int, color: Color, modifier: Modifier) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppDot(color)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = if (dailyLimit > 0) "$value/$dailyLimit" else value.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        if (dailyLimit > 0) {
+            LinearProgressIndicator(
+                progress = { (value.toFloat() / dailyLimit).coerceIn(0f, 1f) },
+                color = color,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeekCard(week: List<DayStats>) {
+    val total = week.sumOf {
+        it[StatMetric.IG_REELS] + it[StatMetric.YT_SHORTS] + it[StatMetric.TT_VIDEOS]
+    }
+    SectionCard {
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(R.string.stats_week),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = stringResource(R.string.stats_week_total, total),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (total == 0) {
+            Text(
+                text = stringResource(R.string.stats_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.stats_chart_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            WeeklyChart(week = week, modifier = Modifier.padding(top = 4.dp))
+        }
+    }
+}
+
+// =========================================================================================
+// Configuración
+// =========================================================================================
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(Locale.getDefault()),
+        style = MaterialTheme.typography.labelLarge,
+        letterSpacing = 1.2.sp,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 12.dp, start = 4.dp)
+    )
+}
+
+@Composable
+private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        shape = CardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun CardHeader(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    dot: Color? = null
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        if (dot != null) {
+            Box(
+                Modifier
+                    .background(dot.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                    .padding(10.dp)
+            ) { AppDot(dot) }
+            Spacer(Modifier.width(12.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/** Tarjeta de una app: switch y, si está activa, límite seguido (barra) y límite diario. */
 @Composable
 private fun AppCard(
+    color: Color,
     title: String,
     subtitle: String,
     enabled: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     sliderLabel: String,
     sliderValue: Int,
-    sliderRange: IntRange,
-    sliderStep: Int = 1,
     onSliderChange: (Int) -> Unit,
     dailyLabel: String,
     dailyValue: Int,
@@ -289,39 +470,32 @@ private fun AppCard(
     onDailySave: (Int) -> Unit
 ) {
     SectionCard {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                CardTitle(title)
-                Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+        CardHeader(title, subtitle, enabled, onEnabledChange, dot = color)
+
+        AnimatedVisibility(visible = enabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = sliderLabel, style = MaterialTheme.typography.bodyMedium)
+                Slider(
+                    value = sliderValue.toFloat(),
+                    onValueChange = { onSliderChange(it.roundToInt()) },
+                    valueRange = 1f..20f,
+                    steps = 18
+                )
+                Text(text = dailyLabel, style = MaterialTheme.typography.bodyMedium)
+                NumberInputWithSave(
+                    savedValue = dailyValue,
+                    loaded = loaded,
+                    range = 0..999,
+                    label = stringResource(R.string.daily_limit_field),
+                    onSave = onDailySave
+                )
+                Text(
+                    text = stringResource(R.string.daily_limit_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Switch(checked = enabled, onCheckedChange = onEnabledChange)
         }
-
-        Text(text = sliderLabel, style = MaterialTheme.typography.bodyMedium)
-        val stepsCount = (sliderRange.last - sliderRange.first) / sliderStep - 1
-        Slider(
-            value = sliderValue.toFloat(),
-            onValueChange = { onSliderChange(it.toInt()) },
-            valueRange = sliderRange.first.toFloat()..sliderRange.last.toFloat(),
-            steps = stepsCount.coerceAtLeast(0)
-        )
-
-        Text(text = dailyLabel, style = MaterialTheme.typography.bodyMedium)
-        NumberInputWithSave(
-            savedValue = dailyValue,
-            loaded = loaded,
-            range = 0..999,
-            label = stringResource(R.string.daily_limit_field),
-            onSave = onDailySave
-        )
-        Text(
-            text = stringResource(R.string.daily_limit_hint),
-            style = MaterialTheme.typography.bodySmall
-        )
     }
 }
 
@@ -329,21 +503,21 @@ private fun AppCard(
 @Composable
 private fun LockSettingsCard(state: HomeUiState, actions: HomeActions) {
     SectionCard {
-        CardTitle(stringResource(R.string.lock_settings_title))
         Text(
-            text = stringResource(R.string.lock_settings_subtitle),
-            style = MaterialTheme.typography.bodySmall
+            text = stringResource(R.string.lock_settings_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = stringResource(R.string.lock_settings_duration_label),
-            style = MaterialTheme.typography.bodyMedium
+            text = stringResource(R.string.lock_settings_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         LockDurationInput(
             savedSeconds = state.lockDurationSeconds,
             loaded = state.loaded,
             onSave = actions.onLockDurationChange
         )
-
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Checkbox(checked = state.blockNavigation, onCheckedChange = actions.onBlockNavigationChange)
             Text(
@@ -353,7 +527,8 @@ private fun LockSettingsCard(state: HomeUiState, actions: HomeActions) {
         }
         Text(
             text = stringResource(R.string.lock_settings_block_nav_desc),
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -362,67 +537,63 @@ private fun LockSettingsCard(state: HomeUiState, actions: HomeActions) {
 @Composable
 private fun QuietHoursCard(state: HomeUiState, actions: HomeActions) {
     SectionCard {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                CardTitle(stringResource(R.string.quiet_title))
+        CardHeader(
+            title = stringResource(R.string.quiet_title),
+            subtitle = stringResource(R.string.quiet_subtitle),
+            checked = state.quietHoursEnabled,
+            onCheckedChange = actions.onQuietHoursEnabledChange
+        )
+
+        AnimatedVisibility(visible = state.quietHoursEnabled) {
+            var startText by remember(state.quietStartMinute, state.loaded) {
+                mutableStateOf(formatHhMm(state.quietStartMinute))
+            }
+            var endText by remember(state.quietEndMinute, state.loaded) {
+                mutableStateOf(formatHhMm(state.quietEndMinute))
+            }
+            val start = parseHhMm(startText)
+            val end = parseHhMm(endText)
+            val valid = start != null && end != null && start != end
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = startText,
+                        onValueChange = { startText = it.take(5) },
+                        label = { Text(stringResource(R.string.quiet_from)) },
+                        singleLine = true,
+                        isError = start == null,
+                        shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = endText,
+                        onValueChange = { endText = it.take(5) },
+                        label = { Text(stringResource(R.string.quiet_to)) },
+                        singleLine = true,
+                        isError = end == null,
+                        shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = { if (valid) actions.onQuietHoursChange(start!!, end!!) },
+                        enabled = valid &&
+                            (start != state.quietStartMinute || end != state.quietEndMinute)
+                    ) { Text(stringResource(R.string.save)) }
+                }
                 Text(
-                    text = stringResource(R.string.quiet_subtitle),
-                    style = MaterialTheme.typography.bodySmall
+                    text = stringResource(R.string.quiet_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Switch(
-                checked = state.quietHoursEnabled,
-                onCheckedChange = actions.onQuietHoursEnabledChange
-            )
         }
-
-        var startText by remember(state.quietStartMinute, state.loaded) {
-            mutableStateOf(formatHhMm(state.quietStartMinute))
-        }
-        var endText by remember(state.quietEndMinute, state.loaded) {
-            mutableStateOf(formatHhMm(state.quietEndMinute))
-        }
-        val start = parseHhMm(startText)
-        val end = parseHhMm(endText)
-        val valid = start != null && end != null && start != end
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = startText,
-                onValueChange = { startText = it.take(5) },
-                label = { Text(stringResource(R.string.quiet_from)) },
-                singleLine = true,
-                isError = start == null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
-            )
-            OutlinedTextField(
-                value = endText,
-                onValueChange = { endText = it.take(5) },
-                label = { Text(stringResource(R.string.quiet_to)) },
-                singleLine = true,
-                isError = end == null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
-            )
-            Button(
-                onClick = { if (valid) actions.onQuietHoursChange(start!!, end!!) },
-                enabled = valid &&
-                    (start != state.quietStartMinute || end != state.quietEndMinute)
-            ) { Text(stringResource(R.string.save)) }
-        }
-        Text(
-            text = stringResource(R.string.quiet_hint),
-            style = MaterialTheme.typography.bodySmall
-        )
     }
 }
 
@@ -454,6 +625,7 @@ private fun NumberInputWithSave(
             label = { Text(label) },
             singleLine = true,
             isError = !valid,
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.weight(1f)
         )
@@ -483,6 +655,10 @@ private fun LockDurationInput(
     val isValid = total != null && seconds!! in 0..59 &&
         total in SettingsRepository.MIN_LOCK_SECONDS..SettingsRepository.MAX_LOCK_SECONDS
 
+    Text(
+        text = stringResource(R.string.lock_settings_duration_label),
+        style = MaterialTheme.typography.bodyMedium
+    )
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -494,6 +670,7 @@ private fun LockDurationInput(
             label = { Text(stringResource(id = R.string.lock_settings_minutes)) },
             singleLine = true,
             isError = !isValid,
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.weight(1f)
         )
@@ -503,20 +680,19 @@ private fun LockDurationInput(
             label = { Text(stringResource(id = R.string.lock_settings_seconds)) },
             singleLine = true,
             isError = !isValid,
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.weight(1f)
         )
         Button(
             onClick = { total?.let(onSave) },
             enabled = isValid && total != savedSeconds
-        ) {
-            Text(stringResource(R.string.save))
-        }
+        ) { Text(stringResource(R.string.save)) }
     }
-
     Text(
         text = stringResource(id = R.string.lock_settings_current, savedSeconds / 60, savedSeconds % 60),
-        style = MaterialTheme.typography.bodySmall
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 

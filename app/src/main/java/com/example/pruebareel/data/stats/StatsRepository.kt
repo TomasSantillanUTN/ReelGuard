@@ -18,7 +18,7 @@ private val Context.statsStore: DataStore<Preferences> by preferencesDataStore(n
 enum class StatMetric(val key: String) {
     IG_REELS("ig_reels"),
     TT_VIDEOS("tt_videos"),
-    YT_SHORTS_SECONDS("yt_seconds"),
+    YT_SHORTS("yt_shorts"),
     LOCKS("locks")
 }
 

@@ -3,6 +3,12 @@
     <string name="accessibility_service_description">ReelGuard detecta cuándo mirás Reels de Instagram, Shorts de YouTube o videos de TikTok para aplicar tus límites. Todo funciona en el celular: no lee ni envía tu contenido.</string>
 
     <!-- General -->
+    <string name="greeting_morning">Buen día 👋</string>
+    <string name="greeting_afternoon">Buenas tardes 👋</string>
+    <string name="greeting_night">Buenas noches 🌙</string>
+    <string name="section_limits">Límites por app</string>
+    <string name="section_lock">Bloqueo y horarios</string>
+    <string name="status_all_ok">Protección activa</string>
     <string name="save">Guardar</string>
 
     <!-- HomeScreen: General -->
@@ -22,16 +28,21 @@
 
     <!-- HomeScreen: Estadísticas -->
     <string name="stats_title">Estadísticas</string>
-    <string name="stats_empty">Todavía no hay datos.</string>
+    <string name="stats_empty">Todavía no hay datos esta semana.</string>
     <string name="stats_today">Hoy</string>
-    <string name="stats_week">Últimos 7 días</string>
-    <string name="stats_label_today">Hoy</string>
-    <string name="stats_label_yesterday">Ayer</string>
-    <string name="stats_line">%1$d reels · %2$d TikToks · %3$s de Shorts · %4$d bloqueos</string>
+    <string name="stats_week">Esta semana</string>
+    <string name="stats_videos_today">videos hoy</string>
+    <string name="stats_locks_today">%d bloqueos</string>
+    <string name="stats_compare_none">Sin datos de días anteriores</string>
+    <string name="stats_compare_less">%d%% menos que tu promedio</string>
+    <string name="stats_compare_more">%d%% más que tu promedio</string>
+    <string name="stats_compare_same">Igual que tu promedio</string>
+    <string name="stats_week_total">%d videos</string>
+    <string name="stats_chart_hint">Tocá una barra para ver el detalle del día</string>
 
     <!-- HomeScreen: Límites diarios -->
     <string name="daily_limit_reels">Límite total por día (reels)</string>
-    <string name="daily_limit_shorts">Límite total por día (minutos de Shorts)</string>
+    <string name="daily_limit_shorts">Límite total por día (Shorts)</string>
     <string name="daily_limit_tiktok">Límite total por día (videos)</string>
     <string name="daily_limit_field">Por día</string>
     <string name="daily_limit_hint">0 = sin límite diario. Al llegar, la app queda bloqueada hasta las 00:00.</string>
@@ -43,8 +54,8 @@
 
     <!-- HomeScreen: YouTube Shorts Card -->
     <string name="shorts_card_title">YouTube Shorts</string>
-    <string name="shorts_card_subtitle">Limita el tiempo en Shorts</string>
-    <string name="shorts_card_slider_label">Tiempo máximo seguido: %d s</string>
+    <string name="shorts_card_subtitle">Limita la cantidad de Shorts consecutivos</string>
+    <string name="shorts_card_slider_label">Máximo de Shorts seguidos: %d</string>
 
     <!-- HomeScreen: TikTok Card -->
     <string name="tiktok_card_title">TikTok</string>
@@ -75,5 +86,6 @@
     <string name="lock_overlay_message_daily">Llegaste al límite de hoy. Se libera a las 00:00</string>
     <string name="lock_overlay_message_quiet">Horario sin videos</string>
     <string name="lock_overlay_button">Volver al Home</string>
+    <string name="lock_overlay_hint">Respirá, levantá la vista un ratito 🌿</string>
 
 </resources>

@@ -34,8 +34,8 @@ data class HomeUiState(
     val reelsDailyLimit: Int = 0,
 
     val shortsEnabled: Boolean = true,
-    val shortsTimeSeconds: Int = 15,
-    val shortsDailyMinutes: Int = 0,
+    val shortsLimit: Int = 5,
+    val shortsDailyLimit: Int = 0,
 
     val tiktokEnabled: Boolean = true,
     val tiktokLimit: Int = 5,
@@ -81,10 +81,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun onReelsDailyLimitChange(v: Int) = launch { settingsRepository.setReelsDailyLimit(v) }
 
     fun onShortsEnabledChange(v: Boolean) = launch { settingsRepository.setShortsEnabled(v) }
-    fun onShortsTimeChange(seconds: Int) = launch {
-        settingsRepository.setShortsTimeMs(seconds.coerceIn(5, 300) * 1_000L)
-    }
-    fun onShortsDailyMinutesChange(v: Int) = launch { settingsRepository.setShortsDailyMinutes(v) }
+    fun onShortsLimitChange(v: Int) = launch { settingsRepository.setShortsLimit(v) }
+    fun onShortsDailyLimitChange(v: Int) = launch { settingsRepository.setShortsDailyLimit(v) }
 
     fun onTiktokEnabledChange(v: Boolean) = launch { settingsRepository.setTiktokEnabled(v) }
     fun onTiktokLimitChange(v: Int) = launch { settingsRepository.setTiktokLimit(v) }
@@ -109,8 +107,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         reelsLimit = s.reelsLimit,
         reelsDailyLimit = s.reelsDailyLimit,
         shortsEnabled = s.shortsEnabled,
-        shortsTimeSeconds = (s.shortsTimeMs / 1000L).toInt(),
-        shortsDailyMinutes = s.shortsDailyMinutes,
+        shortsLimit = s.shortsLimit,
+        shortsDailyLimit = s.shortsDailyLimit,
         tiktokEnabled = s.tiktokEnabled,
         tiktokLimit = s.tiktokLimit,
         tiktokDailyLimit = s.tiktokDailyLimit,

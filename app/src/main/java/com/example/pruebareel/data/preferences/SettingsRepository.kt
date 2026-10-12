@@ -38,8 +38,8 @@ class SettingsRepository(private val context: Context) {
         val REELS_DAILY_LIMIT = intPreferencesKey("reels_daily_limit")
 
         val SHORTS_ENABLED = booleanPreferencesKey("shorts_enabled")
-        val SHORTS_TIME_MS = longPreferencesKey("shorts_time_ms")
-        val SHORTS_DAILY_MINUTES = intPreferencesKey("shorts_daily_minutes")
+        val SHORTS_LIMIT = intPreferencesKey("shorts_limit")
+        val SHORTS_DAILY_LIMIT = intPreferencesKey("shorts_daily_limit")
 
         val TIKTOK_ENABLED = booleanPreferencesKey("tiktok_enabled")
         val TIKTOK_LIMIT = intPreferencesKey("tiktok_limit")
@@ -71,8 +71,8 @@ class SettingsRepository(private val context: Context) {
                 reelsLimit = p[Keys.REELS_LIMIT] ?: 5,
                 reelsDailyLimit = p[Keys.REELS_DAILY_LIMIT] ?: 0,
                 shortsEnabled = p[Keys.SHORTS_ENABLED] ?: true,
-                shortsTimeMs = p[Keys.SHORTS_TIME_MS] ?: 15_000L,
-                shortsDailyMinutes = p[Keys.SHORTS_DAILY_MINUTES] ?: 0,
+                shortsLimit = p[Keys.SHORTS_LIMIT] ?: 5,
+                shortsDailyLimit = p[Keys.SHORTS_DAILY_LIMIT] ?: 0,
                 tiktokEnabled = p[Keys.TIKTOK_ENABLED] ?: true,
                 tiktokLimit = p[Keys.TIKTOK_LIMIT] ?: 5,
                 tiktokDailyLimit = p[Keys.TIKTOK_DAILY_LIMIT] ?: 0,
@@ -92,8 +92,8 @@ class SettingsRepository(private val context: Context) {
 
     // ---------- YouTube ----------
     suspend fun setShortsEnabled(v: Boolean) = edit { it[Keys.SHORTS_ENABLED] = v }
-    suspend fun setShortsTimeMs(v: Long) = edit { it[Keys.SHORTS_TIME_MS] = v }
-    suspend fun setShortsDailyMinutes(v: Int) = edit { it[Keys.SHORTS_DAILY_MINUTES] = v.coerceIn(0, 999) }
+    suspend fun setShortsLimit(v: Int) = edit { it[Keys.SHORTS_LIMIT] = v }
+    suspend fun setShortsDailyLimit(v: Int) = edit { it[Keys.SHORTS_DAILY_LIMIT] = v.coerceIn(0, 999) }
 
     // ---------- TikTok ----------
     suspend fun setTiktokEnabled(v: Boolean) = edit { it[Keys.TIKTOK_ENABLED] = v }

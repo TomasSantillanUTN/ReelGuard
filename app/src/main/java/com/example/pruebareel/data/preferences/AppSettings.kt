@@ -6,7 +6,7 @@ import com.example.pruebareel.core.lock.LockTarget
 /**
  * Modelo de datos para la configuración de la aplicación.
  *
- * Límites "seguidos" (streak): cantidad de videos o tiempo consecutivo antes del bloqueo corto.
+ * Límites "seguidos" (streak): cantidad de videos consecutivos antes del bloqueo corto.
  * Límites diarios: total por día; `0` significa sin límite.
  *
  * @property lockDurationSeconds Duración del bloqueo corto (máx. 10 minutos).
@@ -22,8 +22,8 @@ data class AppSettings(
     val reelsDailyLimit: Int,
 
     val shortsEnabled: Boolean,
-    val shortsTimeMs: Long,
-    val shortsDailyMinutes: Int,
+    val shortsLimit: Int,
+    val shortsDailyLimit: Int,
 
     val tiktokEnabled: Boolean,
     val tiktokLimit: Int,
