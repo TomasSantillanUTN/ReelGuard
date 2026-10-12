@@ -18,8 +18,7 @@ import com.example.pruebareel.feature.service.ReelGuardService
  * TikTok: cuenta los videos seguidos y los del día.
  *
  * Detección (heurística, depende del diseño actual de TikTok — ver docs/tiktok_feed.jpeg):
- * - **Sección de videos (feed)** si se ven las pestañas de arriba ("Para ti" / "Siguiendo",
- *   o "For You" / "Following"). En Perfil, Mensajes, Amigos, etc. no están, así que esas
+ * - **Sección de videos (feed)** si se ve la pestaña de arriba "Para ti" ("For You"). En Perfil, Mensajes, Amigos, etc. no están, así que esas
  *   secciones se pueden usar aunque sea horario sin videos.
  * - **Pasó un video** cuando scrollea un contenedor que ocupa casi toda la pantalla.
  *
@@ -29,7 +28,11 @@ class TikTokModule(private val host: ReelGuardService) : BlockerModule {
 
     companion object {
         private const val TAG = "ReelGuard-TikTok"
-        private val FEED_TABS = setOf("para ti", "siguiendo", "for you", "following")
+        /**
+         * Pestaña "Para ti" de arriba del feed. NO se usa "Siguiendo": esa palabra también aparece
+         * en el perfil (cantidad de cuentas que seguís) y daba falsos positivos.
+         */
+        private val FEED_TABS = setOf("para ti", "for you")
         /** Pestañas de abajo a las que se puede "escapar" del feed. */
         private val ESCAPE_TABS = setOf("perfil", "profile", "mensajes", "inbox", "bandeja de entrada")
         private const val DEBOUNCE_TIME_MS = 500L

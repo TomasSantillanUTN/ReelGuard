@@ -35,6 +35,8 @@ class InstagramModule(private val host: ReelGuardService) : BlockerModule {
         private const val CONTENT_CHECK_INTERVAL_MS = 700L
         /** El Reel tiene que ocupar al menos este % del alto de pantalla para ser la sección de Reels. */
         private const val REEL_MIN_HEIGHT_RATIO = 0.65f
+        /** Un scroll cuenta si hace menos de esto se estaba en la sección de Reels. */
+        private const val SCROLL_GRACE_MS = 3_000L
     }
 
     override val target = LockTarget.INSTAGRAM
@@ -75,7 +77,12 @@ class InstagramModule(private val host: ReelGuardService) : BlockerModule {
 
         when (type) {
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                if (!inReels || !isFromViewPager(event)) return
+                // Justo al deslizar se ven dos Reels a medias (ninguno ocupa el 65%), así que
+                // inReels puede dar false en ese instante: alcanza con haber estado en Reels
+                // hace un momento.
+                val recentlyInReels = inReels || now - lastReelActivityTime < SCROLL_GRACE_MS
+                if (!recentlyInReels || !isFromViewPager(event)) return
+                lastReelActivityTime = now
                 if (now - lastReelCountTime > DEBOUNCE_TIME_MS) {
                     lastReelCountTime = now
                     reelCount++
