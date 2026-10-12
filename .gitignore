@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Archivos de Android Studio / Kotlin que no van al repo
+/.idea/
+/app/.idea/
+.kotlin/

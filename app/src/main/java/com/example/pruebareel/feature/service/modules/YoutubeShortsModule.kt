@@ -1,0 +1,234 @@
+package com.example.pruebareel.feature.service.modules
+
+import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
+import android.graphics.Path
+import android.graphics.Rect
+import android.os.Build
+import android.util.Log
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
+import com.example.pruebareel.core.lock.LockReason
+import com.example.pruebareel.core.lock.LockTarget
+import com.example.pruebareel.core.utils.findAny
+import com.example.pruebareel.core.utils.looksLikeCommentsSheet
+import com.example.pruebareel.data.preferences.AppSettings
+import com.example.pruebareel.data.stats.StatMetric
+import com.example.pruebareel.feature.service.BlockerModule
+import com.example.pruebareel.feature.service.ReelGuardService
+
+/**
+ * YouTube Shorts: cuenta los Shorts seguidos y los del día (igual que Reels y TikTok).
+ *
+ * Lo que expone YouTube en el reproductor de Shorts (ver docs/logcat_youtube.txt):
+ * - Un nodo con descripción **"Progreso del video"** y una **SeekBar** cuya descripción trae
+ *   la duración ("0 minutos 3 segundos de 0 minutos 51 segundos").
+ * - Un **RecyclerView que ocupa casi toda la pantalla** (el carrusel vertical de Shorts).
+ * - La columna derecha (Me gusta, Remix…) NO aparece en el árbol de accesibilidad.
+ *
+ * YouTube manda muy pocos eventos de scroll al pasar de Short, así que un Short nuevo se
+ * detecta porque la barra de progreso desaparece un instante (carga) y vuelve, o porque cambia
+ * la duración del video. El scroll queda solo como respaldo.
+ *
+ * Si no cuenta bien, filtrar Logcat por "ReelGuard-YouTube".
+ */
+class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
+
+    companion object {
+        private const val TAG = "ReelGuard-YouTube"
+        /** Solo para evitar contar dos veces el mismo parpadeo de la barra. */
+        private const val DEBOUNCE_TIME_MS = 250L
+        private const val FULLSCREEN_RATIO = 0.8f
+
+        private val PROGRESS_LABELS = setOf("progreso del video", "video progress")
+        private val LOADING_LABELS = setOf("espera", "loading", "cargando")
+
+        /** Si se vio un Short hace menos de esto y aparece la ventana flotante, se cierra. */
+        private const val PIP_AFTER_SHORTS_MS = 3_000L
+        private const val PIP_DISMISS_THROTTLE_MS = 1_500L
+    }
+
+    override val target = LockTarget.YOUTUBE
+    override val packages = setOf("com.google.android.youtube")
+
+    private var shortsCount = 0
+    private var lastCountTime = 0L
+    private var wasInShorts = false
+    private var lastShortsSeenTime = 0L
+    private var lastDuration: String? = null
+    /** Se vio la barra de progreso desaparecer (cambio de Short en curso). */
+    private var sawGap = false
+    private var lastPipDismissTime = 0L
+
+    override fun isEnabled(settings: AppSettings) = settings.shortsEnabled
+
+    override fun onAnyEvent(event: AccessibilityEvent, now: Long) {
+        // VENTANA FLOTANTE (PiP): si viene de un Short (o hay bloqueo activo), se cierra.
+        if (host.isLocked(target, now) || now - lastShortsSeenTime < PIP_AFTER_SHORTS_MS) {
+            findYoutubePipWindow()?.let { dismissPip(it) }
+        }
+    }
+
+    override fun onAppEvent(event: AccessibilityEvent, root: AccessibilityNodeInfo, now: Long) {
+        val s = host.settings ?: return
+        val type = event.eventType
+        val inShorts = isShortsScreen(root)
+        val duration = if (inShorts) videoDuration(root) else null
+
+        if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED || duration != lastDuration) {
+            Log.d(TAG, "evento=${AccessibilityEvent.eventTypeToString(type)} inShorts=$inShorts duracion=$duration count=$shortsCount")
+        }
+
+        if (inShorts) {
+            lastShortsSeenTime = now
+            wasInShorts = true
+            // Horario sin videos / límite diario: se revisa SIEMPRE que se está en Shorts (no solo
+            // al entrar) y solo se saca al usuario de Shorts; el resto de YouTube se puede usar.
+            if (host.enforceUsageRules(target, dailyLimitReached(s), ::stillInShorts)) return
+        }
+
+        // ---- Conteo ----
+        // Al pasar de Short, la barra de progreso desaparece un instante (duración = null, se ve
+        // "Espera") y vuelve con el video nuevo. Ese "hueco" es la señal más confiable: funciona
+        // aunque se pase muy rápido y aunque dos Shorts duren lo mismo. Un Short que se repite
+        // en loop no genera hueco, así que no se cuenta dos veces.
+        if (inShorts || wasInShorts) {
+            if (duration == null) {
+                if (lastDuration != null && !root.looksLikeCommentsSheet()) sawGap = true
+            } else {
+                when {
+                    lastDuration == null -> countShort(s, now, "primer Short")
+                    sawGap || duration != lastDuration -> countShort(s, now, "Short nuevo")
+                }
+                lastDuration = duration
+                sawGap = false
+            }
+        }
+
+        // Respaldo: si YouTube no mostrara la duración, se cuenta por scroll del carrusel.
+        if (type == AccessibilityEvent.TYPE_VIEW_SCROLLED && inShorts && lastDuration == null) {
+            val source = event.source
+            if (source != null && isFullScreen(source)) countShort(s, now, "scroll")
+        }
+
+        // Salió de Shorts de verdad (no es la pantalla de carga ni los comentarios).
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            !inShorts && !isLoading(root) && !root.looksLikeCommentsSheet()
+        ) {
+            resetSession()
+        }
+    }
+
+    private fun countShort(s: AppSettings, now: Long, why: String) {
+        if (now - lastCountTime < DEBOUNCE_TIME_MS) return
+        lastCountTime = now
+        shortsCount++
+        host.addStat(StatMetric.YT_SHORTS)
+        Log.d(TAG, "Short contado ($why): $shortsCount / ${s.shortsLimit}")
+
+        // Acá se cuenta también el Short que se está por ver (el primero cuenta como 1), así que
+        // se bloquea al EMPEZAR el siguiente al límite: con límite 5 se ven 5 Shorts completos,
+        // igual que en Reels y TikTok.
+        when {
+            shortsCount > s.shortsLimit -> {
+                // Se sale de Shorts para que el video deje de reproducirse y se bloquea.
+                host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                host.requestLock(target, LockReason.STREAK)
+            }
+            s.shortsDailyLimit > 0 && host.todayStat(StatMetric.YT_SHORTS) > s.shortsDailyLimit ->
+                host.kickOutOfSection(target, LockReason.DAILY_LIMIT, ::stillInShorts)
+        }
+    }
+
+    private fun stillInShorts(): Boolean = host.rootInActiveWindow?.let { isShortsScreen(it) } == true
+
+    private fun resetSession() {
+        if (wasInShorts) Log.d(TAG, "Salió de Shorts: contador a 0")
+        shortsCount = 0
+        wasInShorts = false
+        lastDuration = null
+        sawGap = false
+    }
+
+    override fun onLocked() {
+        shortsCount = 0
+        lastDuration = null
+        sawGap = false
+    }
+
+    private fun dailyLimitReached(s: AppSettings) =
+        s.shortsDailyLimit > 0 && host.todayStat(StatMetric.YT_SHORTS) >= s.shortsDailyLimit
+
+    // ---------- Detección ----------
+
+    /** Reproductor de Shorts: barra/indicador de progreso + carrusel a pantalla completa. */
+    private fun isShortsScreen(root: AccessibilityNodeInfo): Boolean {
+        val hasProgress = root.findAny { n ->
+            n.className == "android.widget.SeekBar" ||
+                n.contentDescription?.toString()?.trim()?.lowercase() in PROGRESS_LABELS
+        }
+        if (!hasProgress) return false
+        return root.findAny { n ->
+            val cls = n.className?.toString() ?: return@findAny false
+            (cls.contains("RecyclerView") || cls.contains("ViewPager")) && isFullScreen(n)
+        }
+    }
+
+    /** "0 minutos 51 segundos": la parte de la descripción de la SeekBar después de " de " / " of ". */
+    private fun videoDuration(root: AccessibilityNodeInfo): String? {
+        var result: String? = null
+        root.findAny { n ->
+            if (n.className != "android.widget.SeekBar") return@findAny false
+            val desc = n.contentDescription?.toString() ?: return@findAny false
+            val idx = maxOf(desc.lastIndexOf(" de "), desc.lastIndexOf(" of "))
+            result = if (idx >= 0) desc.substring(idx + 4).trim() else null
+            true
+        }
+        return result
+    }
+
+    private fun isLoading(root: AccessibilityNodeInfo): Boolean = root.findAny { n ->
+        n.contentDescription?.toString()?.trim()?.lowercase() in LOADING_LABELS
+    }
+
+    private fun isFullScreen(node: AccessibilityNodeInfo): Boolean {
+        val r = Rect()
+        node.getBoundsInScreen(r)
+        val screenHeight = host.resources.displayMetrics.heightPixels
+        return screenHeight > 0 && r.height() >= screenHeight * FULLSCREEN_RATIO
+    }
+
+    // ---------- Picture-in-picture ----------
+
+    private fun findYoutubePipWindow(): AccessibilityWindowInfo? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
+        return try {
+            host.windows.firstOrNull { w ->
+                w.isInPictureInPictureMode && w.root?.packageName?.toString() in packages
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Arrastra la ventana flotante hasta la "X" de abajo al centro (gesto estándar de Android). */
+    private fun dismissPip(pip: AccessibilityWindowInfo) {
+        val now = System.currentTimeMillis()
+        if (now - lastPipDismissTime < PIP_DISMISS_THROTTLE_MS) return
+        lastPipDismissTime = now
+
+        val bounds = Rect()
+        pip.getBoundsInScreen(bounds)
+        val metrics = host.resources.displayMetrics
+
+        val path = Path().apply {
+            moveTo(bounds.exactCenterX(), bounds.exactCenterY())
+            lineTo(metrics.widthPixels / 2f, metrics.heightPixels - 10f)
+        }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 600))
+            .build()
+        host.dispatchGesture(gesture, null, null)
+    }
+}

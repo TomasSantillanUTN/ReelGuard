@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Configuración del único servicio de accesibilidad (Instagram, YouTube y TikTok).
+     Sin android:packageNames: necesita enterarse cuando el usuario sale de una app (para ocultar
+     la pantalla de bloqueo) y ver la lista de ventanas (Short en ventana flotante).
+     canPerformGestures permite cerrar la ventana flotante de YouTube. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled|typeWindowsChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="true"
+    android:notificationTimeout="100"
+    android:description="@string/accessibility_service_description" />

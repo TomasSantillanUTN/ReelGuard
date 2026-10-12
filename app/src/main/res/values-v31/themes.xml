@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: pantalla de inicio del sistema con el logo de ReelGuard sobre verde salvia. -->
+    <style name="Theme.Pruebareel" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#2F6B57</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#2F6B57</item>
+    </style>
+</resources>

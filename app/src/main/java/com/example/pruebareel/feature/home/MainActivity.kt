@@ -6,56 +6,63 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pruebareel.ui.theme.PruebareelTheme
 
 /**
  * Actividad principal de la aplicación.
  *
- * Esta actividad es el punto de entrada de la interfaz de usuario. Se encarga de mostrar la pantalla
- * principal [HomeScreen] y de conectar el [HomeViewModel] para la gestión del estado.
+ * Muestra [HomeScreen]. Ya no abre los ajustes de permisos sola al iniciar: la pantalla muestra
+ * qué falta y el usuario decide cuándo ir a activarlo.
  */
 class MainActivity : ComponentActivity() {
 
-    /**
-     * Se llama cuando la actividad es creada por primera vez.
-     *
-     * Aquí se configura el contenido de la interfaz de usuario utilizando Jetpack Compose. Se establece
-     * el tema de la aplicación y se inicializa [HomeScreen] con su estado y los manejadores de eventos
-     * correspondientes desde el [HomeViewModel].
-     */
+    private val homeViewModel: HomeViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificar si tenemos el permiso de overlay, si no, lo pedimos (opcional pero recomendado)
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
+        val vm = homeViewModel
+        val actions = HomeActions(
+            onOpenAccessibilitySettings = {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            },
+            onOpenOverlaySettings = {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            },
+            onReelsEnabledChange = vm::onReelsEnabledChange,
+            onReelsLimitChange = vm::onReelsLimitChange,
+            onReelsDailyLimitChange = vm::onReelsDailyLimitChange,
+            onShortsEnabledChange = vm::onShortsEnabledChange,
+            onShortsLimitChange = vm::onShortsLimitChange,
+            onShortsDailyLimitChange = vm::onShortsDailyLimitChange,
+            onTiktokEnabledChange = vm::onTiktokEnabledChange,
+            onTiktokLimitChange = vm::onTiktokLimitChange,
+            onTiktokDailyLimitChange = vm::onTiktokDailyLimitChange,
+            onLockDurationChange = vm::onLockDurationChange,
+            onBlockNavigationChange = vm::onBlockNavigationChange,
+            onQuietHoursEnabledChange = vm::onQuietHoursEnabledChange,
+            onQuietHoursChange = vm::onQuietHoursChange
+        )
 
         setContent {
             PruebareelTheme {
-                val homeViewModel: HomeViewModel = viewModel()
-
-                val state by homeViewModel.uiState.collectAsStateWithLifecycle()
-
-                HomeScreen(
-                    state = state,
-                    onReelsEnabledChange = homeViewModel::onReelsEnabledChange,
-                    onReelsLimitChange = homeViewModel::onReelsLimitChange,
-                    onShortsEnabledChange = homeViewModel::onShortsEnabledChange,
-                    onShortsTimeChange = homeViewModel::onShortsTimeChange,
-                    onLockDurationChange = homeViewModel::onLockDurationChange,
-                    onOpenAccessibilitySettings = {
-                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    }
-                )
+                val state by vm.uiState.collectAsStateWithLifecycle()
+                HomeScreen(state = state, actions = actions)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Al volver de Ajustes, actualizar si se activó el servicio o el permiso.
+        homeViewModel.refreshPermissions()
     }
 }

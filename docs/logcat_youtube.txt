@@ -1,0 +1,52 @@
+2026-10-11 22:25:46.822 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false count=1 srcClass=android.widget.FrameLayout srcAlto=1934 pantallaAlto=2400
+2026-10-11 22:25:46.828 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  ---- pantalla (13 nodos) ----
+2026-10-11 22:25:46.828 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Tú
+2026-10-11 22:25:46.828 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Tú desc=null
+2026-10-11 22:25:46.828 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Suscripciones: Hay contenido nuevo dispo
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Suscripciones desc=null
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [View] id=null text=null desc=Nuevo contenido disponible
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Crear
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Shorts
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Shorts desc=null
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Principal
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Principal desc=null
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [ImageView] id=null text=null desc=Buscar
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [ImageView] id=null text=null desc=Notificaciones, 3
+2026-10-11 22:25:46.829 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [ImageView] id=null text=null desc=YouTube
+2026-10-11 22:25:47.157 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false count=0 srcClass=null srcAlto=0 pantallaAlto=2400
+2026-10-11 22:25:48.144 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_VIEW_SCROLLED inShorts=false count=0 srcClass=android.support.v7.widget.RecyclerView srcAlto=1817 pantallaAlto=2400
+2026-10-11 22:25:52.860 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false count=0 srcClass=android.widget.ScrollView srcAlto=2166 pantallaAlto=2400
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  ---- pantalla (14 nodos) ----
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [SeekBar] id=null text=null desc=0 minutos 0 segundos de 0 minutos 51 seg
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Tú
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Tú desc=null
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Suscripciones: Hay contenido nuevo dispo
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Suscripciones desc=null
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [View] id=null text=null desc=Nuevo contenido disponible
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Crear
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Shorts
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Shorts desc=null
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Principal
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Principal desc=null
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [ImageButton] id=null text=null desc=Navegar hacia arriba
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [RecyclerView] id=null text=null desc=null
+2026-10-11 22:25:52.870 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [View] id=null text=null desc=Progreso del video
+2026-10-11 22:25:52.991 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_VIEW_SCROLLED inShorts=true count=0 srcClass=android.support.v7.widget.RecyclerView srcAlto=2051 pantallaAlto=2400
+2026-10-11 22:25:53.295 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=true count=1 srcClass=null srcAlto=0 pantallaAlto=2400
+2026-10-11 22:26:05.567 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false count=1 srcClass=android.widget.ScrollView srcAlto=2166 pantallaAlto=2400
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  ---- pantalla (13 nodos) ----
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Tú
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Tú desc=null
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Suscripciones: Hay contenido nuevo dispo
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Suscripciones desc=null
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [View] id=null text=null desc=Nuevo contenido disponible
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Crear
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Shorts
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Shorts desc=null
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [Button] id=null text=null desc=Principal
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [TextView] id=null text=Principal desc=null
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [ProgressBar] id=null text=null desc=Espera
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [RecyclerView] id=null text=null desc=null
+2026-10-11 22:26:05.585 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D    [View] id=null text=null desc=Progreso del video
+2026-10-11 22:26:05.721 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_VIEW_SCROLLED inShorts=false count=0 srcClass=android.support.v7.widget.RecyclerView srcAlto=2051 pantallaAlto=2400
+2026-10-11 22:26:06.004 19596-19596 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false count=0 srcClass=null srcAlto=0 pantallaAlto=2400
