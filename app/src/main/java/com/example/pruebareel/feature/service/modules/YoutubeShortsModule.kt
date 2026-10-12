@@ -63,6 +63,7 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
     override fun onAppEvent(event: AccessibilityEvent, root: AccessibilityNodeInfo, now: Long) {
         val s = host.settings ?: return
         val inShorts = isShortsPlayer(root)
+        debugDump(event, root, inShorts, now)
         val justEntered = inShorts && now - lastShortsSeenTime > RESET_GRACE_MS
 
         if (inShorts) {
@@ -78,7 +79,6 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 val source = event.source
                 val fullScreen = source != null && isFullScreen(source)
-                Log.d(TAG, "scroll: class=${source?.className} fullScreen=$fullScreen inShorts=$inShorts count=$shortsCount")
                 if (!inShorts || !fullScreen) return
 
                 if (now - lastCountTime > DEBOUNCE_TIME_MS) {
@@ -127,6 +127,46 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
                 desc?.startsWith("Remix", ignoreCase = true) == true ||
                 (desc != null && desc.contains("Short", ignoreCase = true) && !desc.equals("Shorts", ignoreCase = true))
         }
+    }
+
+    // ---------- Diagnóstico (Logcat: ReelGuard-YouTube) ----------
+
+    private var lastDumpTime = 0L
+
+    /**
+     * Escribe en Logcat qué está viendo el servicio: tipo de evento, si detectó Shorts, y
+     * (como mucho cada 2 s) la lista de textos / descripciones / clases de la pantalla.
+     * Sirve para ajustar la detección si YouTube cambia su diseño.
+     */
+    private fun debugDump(event: AccessibilityEvent, root: AccessibilityNodeInfo, inShorts: Boolean, now: Long) {
+        val type = AccessibilityEvent.eventTypeToString(event.eventType)
+        val src = event.source
+        val r = Rect().also { src?.getBoundsInScreen(it) }
+        Log.d(
+            TAG,
+            "evento=$type inShorts=$inShorts count=$shortsCount " +
+                "srcClass=${src?.className} srcAlto=${r.height()} pantallaAlto=${host.resources.displayMetrics.heightPixels}"
+        )
+        if (now - lastDumpTime < 2_000) return
+        lastDumpTime = now
+
+        val lines = mutableListOf<String>()
+        val stack = ArrayDeque<AccessibilityNodeInfo>().apply { add(root) }
+        while (stack.isNotEmpty() && lines.size < 60) {
+            val n = stack.removeLast()
+            val cls = n.className?.toString()?.substringAfterLast('.') ?: "?"
+            val text = n.text?.toString()?.take(40)
+            val desc = n.contentDescription?.toString()?.take(40)
+            val id = n.viewIdResourceName?.substringAfterLast('/')
+            if (text != null || desc != null || id != null || cls.contains("SeekBar") ||
+                cls.contains("Pager") || cls.contains("Recycler")
+            ) {
+                lines += "  [$cls] id=$id text=$text desc=$desc"
+            }
+            for (i in 0 until n.childCount) n.getChild(i)?.let { stack.add(it) }
+        }
+        Log.d(TAG, "---- pantalla (${lines.size} nodos) ----")
+        lines.forEach { Log.d(TAG, it) } // una línea por nodo: Logcat corta los mensajes largos
     }
 
     private fun isFullScreen(node: AccessibilityNodeInfo): Boolean {
