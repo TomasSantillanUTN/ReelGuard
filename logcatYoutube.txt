@@ -1,0 +1,39 @@
+2026-10-11 22:38:21.658 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false duracion=null count=0
+2026-10-11 22:38:22.069 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=false duracion=null count=0
+2026-10-11 22:38:22.279 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_VIEW_SCROLLED inShorts=false duracion=null count=0
+2026-10-11 22:38:26.444 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 51 segundos count=0
+2026-10-11 22:38:26.597 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=true duracion=0 minutos 51 segundos count=0
+2026-10-11 22:38:26.921 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_VIEW_SCROLLED inShorts=true duracion=0 minutos 51 segundos count=0
+2026-10-11 22:38:26.923 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  Short contado (scroll): 1 / 5
+2026-10-11 22:38:27.339 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_STATE_CHANGED inShorts=true duracion=0 minutos 51 segundos count=1
+2026-10-11 22:38:29.384 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=1
+2026-10-11 22:38:29.428 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=1
+2026-10-11 22:38:29.461 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 21 segundos count=1
+2026-10-11 22:38:29.463 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  Short contado (otra duración): 2 / 5
+2026-10-11 22:38:30.708 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=2
+2026-10-11 22:38:30.727 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=2
+2026-10-11 22:38:30.745 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 12 segundos count=2
+2026-10-11 22:38:33.871 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=2
+2026-10-11 22:38:33.905 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 6 segundos count=2
+2026-10-11 22:38:33.907 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  Short contado (otra duración): 3 / 5
+2026-10-11 22:38:35.180 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=3
+2026-10-11 22:38:35.201 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=3
+2026-10-11 22:38:35.227 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=3
+2026-10-11 22:38:35.244 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=3
+2026-10-11 22:38:35.259 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 7 segundos count=3
+2026-10-11 22:38:36.576 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=3
+2026-10-11 22:38:36.591 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=3
+2026-10-11 22:38:36.608 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=3
+2026-10-11 22:38:36.637 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=false duracion=null count=3
+2026-10-11 22:38:36.655 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 41 segundos count=3
+2026-10-11 22:38:36.660 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  Short contado (otra duración): 4 / 5
+2026-10-11 22:38:38.390 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=4
+2026-10-11 22:38:38.451 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=null count=4
+2026-10-11 22:38:38.502 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  evento=TYPE_WINDOW_CONTENT_CHANGED inShorts=true duracion=0 minutos 20 segundos count=4
+2026-10-11 22:38:38.505 25195-25195 ReelGuard-YouTube       com.example.pruebareel               D  Short contado (otra duración): 5 / 5
+2026-10-11 22:38:38.558 25195-25195 CompatChangeReporter    com.example.pruebareel               D  Compat change id reported: 376561342; UID 10445; state: ENABLED
+2026-10-11 22:38:38.662 25195-25195 BufferQueueConsumer     com.example.pruebareel               D  [](id:626b00000002,api:0,p:-1,c:25195) connect: controlledByApp=false
+2026-10-11 22:38:38.663 25195-25195 BLASTBufferQueue        com.example.pruebareel               D  [VRI[]#2](f:0,a:0) constructor()
+2026-10-11 22:38:38.663 25195-25195 BLASTBufferQueue        com.example.pruebareel               D  [VRI[]#2](f:0,a:0) update width=1080 height=2129 format=-3 mTransformHint=0
+2026-10-11 22:38:38.680 25195-25235 libc                    com.example.pruebareel               W  Access denied finding property "vendor.debug.gpu.dump.apphint"
+2026-10-11 22:38:38.717 25195-25235 BLASTBufferQueue        com.example.pruebareel               D  [VRI[]#2](f:0,a:1) acquireNextBufferLocked size=1080x2129 mFrameNumber=1 applyTransaction=true mTimestamp=159162658360178(auto) mPendingTransactions.size=0 graphicBufferId=108211701022734 transform=0
