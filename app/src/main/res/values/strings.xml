@@ -45,7 +45,7 @@
     <string name="daily_limit_shorts">Límite total por día (Shorts)</string>
     <string name="daily_limit_tiktok">Límite total por día (videos)</string>
     <string name="daily_limit_field">Por día</string>
-    <string name="daily_limit_hint">0 = sin límite diario. Al llegar, la app queda bloqueada hasta las 00:00.</string>
+    <string name="daily_limit_hint">0 = sin límite diario. Al llegar, no se puede entrar a la sección de videos hasta las 00:00 (el resto de la app se usa normal).</string>
 
     <!-- HomeScreen: Instagram Reels Card -->
     <string name="reels_card_title">Instagram Reels</string>
@@ -70,11 +70,11 @@
     <string name="lock_settings_seconds">Segundos</string>
     <string name="lock_settings_current">Guardado: %1$d min %2$d s</string>
     <string name="lock_settings_block_nav">Bloquear botones del sistema</string>
-    <string name="lock_settings_block_nav_desc">Si está marcado, no se puede usar Inicio, Volver ni Recientes hasta que termine la cuenta regresiva. Si no, podés salir y seguir usando el celular (la app sigue bloqueada). No aplica al límite diario ni al horario sin videos: esos nunca bloquean los botones.</string>
+    <string name="lock_settings_block_nav_desc">Si está marcado, no se puede usar Inicio, Volver ni Recientes hasta que termine la cuenta regresiva. Si no, podés salir y seguir usando el celular (la app sigue bloqueada). No aplica al límite diario ni al horario sin videos: esos solo te sacan de la sección de videos.</string>
 
     <!-- HomeScreen: Horario sin videos -->
     <string name="quiet_title">Horario sin videos</string>
-    <string name="quiet_subtitle">En este horario no se pueden mirar Reels, Shorts ni TikToks</string>
+    <string name="quiet_subtitle">En este horario no se puede entrar a Reels, Shorts ni al feed de TikTok. El resto de cada app se usa normal.</string>
     <string name="quiet_from">Desde (HH:MM)</string>
     <string name="quiet_to">Hasta (HH:MM)</string>
     <string name="quiet_hint">Puede cruzar la medianoche, por ejemplo de 23:00 a 07:00.</string>
@@ -85,6 +85,8 @@
     <string name="lock_overlay_message_shorts">Se terminó el tiempo de Shorts</string>
     <string name="lock_overlay_message_daily">Llegaste al límite de hoy. Se libera a las 00:00</string>
     <string name="lock_overlay_message_quiet">Horario sin videos</string>
+    <string name="section_blocked_quiet">Horario sin videos: %1$s bloqueado hasta las %2$s</string>
+    <string name="section_blocked_daily">Llegaste al límite de hoy: %1$s bloqueado hasta las 00:00</string>
     <string name="lock_overlay_button">Volver al Home</string>
     <string name="lock_overlay_hint">Respirá, levantá la vista un ratito 🌿</string>
 

@@ -28,6 +28,12 @@ interface BlockerModule {
     /** Cualquier evento del sistema (de cualquier app). Por defecto no hace nada. */
     fun onAnyEvent(event: AccessibilityEvent, now: Long) {}
 
+    /**
+     * Intenta salir de la sección de videos navegando a otra parte de la app (ej. tocar la
+     * pestaña "Perfil"). Devuelve `true` si lo logró; si no, el servicio usa "Volver".
+     */
+    fun escapeSection(root: AccessibilityNodeInfo): Boolean = false
+
     /** Se llamó cuando se activó un bloqueo para esta app: reiniciar contadores. */
     fun onLocked() {}
 

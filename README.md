@@ -8,15 +8,15 @@ ReelGuard es una aplicación de Android que te ayuda a tomar el control de tu co
 
 - **Límite de videos seguidos:** máximo de Reels, Shorts y TikToks consecutivos. Al llegar, aparece una **pantalla de bloqueo con cuenta regresiva** (de 5 segundos a 10 minutos).
 - **Bloquear o no los botones del sistema:** con la opción activada no se puede salir hasta que termine la cuenta regresiva. Desactivada, la pantalla de bloqueo no tapa Inicio / Volver / Recientes y desaparece al salir de la app.
-- **Límite diario por app:** total de Reels, Shorts o TikToks por día. Al llegar, la app queda bloqueada hasta las 00:00.
-- **Horario sin videos:** por ejemplo de 23:00 a 07:00 (puede cruzar la medianoche).
+- **Límite diario por app:** total de Reels, Shorts o TikToks por día. Al llegar, no se puede entrar a la sección de videos hasta las 00:00.
+- **Horario sin videos:** por ejemplo de 23:00 a 07:00 (puede cruzar la medianoche). Solo se bloquea la sección de videos; mensajes, feed, perfil, etc. se usan normal.
 - **Estadísticas:** videos vistos y bloqueos de hoy (comparado con tu promedio) y gráfico de barras de los últimos 7 días por app.
 - **Estado de permisos:** la pantalla principal muestra si el servicio de accesibilidad y el permiso de superposición están activos.
 - **YouTube Shorts en ventana flotante:** si un Short se minimiza al tocar Inicio, la ventana se cierra.
 - **Los comentarios no reinician el contador** (Instagram y TikTok).
 - **Privacidad primero:** todo funciona en el dispositivo. No requiere internet y no envía información.
 
-> El límite diario y el horario sin videos **nunca** bloquean los botones del sistema, aunque la opción esté activada, para que el celular no quede inutilizable por horas.
+> El límite diario y el horario sin videos **no** muestran la pantalla de bloqueo: si entrás a la sección de videos, ReelGuard te saca (Volver, o la pestaña Perfil en TikTok) y muestra un aviso. El resto de la app sigue disponible.
 
 ---
 

@@ -32,3 +32,39 @@ fun AccessibilityNodeInfo.looksLikeCommentsSheet(): Boolean = findAny { node ->
         s.contains("comentario", ignoreCase = true) || s.contains("comment", ignoreCase = true)
     }
 }
+
+/** Primer nodo que cumple [predicate] (o null). */
+fun AccessibilityNodeInfo.findFirst(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
+    var found: AccessibilityNodeInfo? = null
+    findAny { if (predicate(it)) { found = it; true } else false }
+    return found
+}
+
+/**
+ * Busca un nodo cuyo texto o descripción sea uno de [labels] (sin importar mayúsculas) y lo
+ * toca. Si el nodo no es "clickeable", sube hasta el primer padre que sí lo sea.
+ * Devuelve `true` si pudo tocar algo.
+ */
+fun AccessibilityNodeInfo.clickByLabel(labels: Set<String>): Boolean {
+    val target = findFirst { n ->
+        val t = n.text?.toString()?.trim()?.lowercase()
+        val d = n.contentDescription?.toString()?.trim()?.lowercase()
+        t in labels || d in labels
+    } ?: return false
+    var node: AccessibilityNodeInfo? = target
+    while (node != null && !node.isClickable) node = node.parent
+    return node?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+}
+
+/** Hay un contenedor desplazable (ViewPager / RecyclerView) que ocupa casi toda la pantalla. */
+fun AccessibilityNodeInfo.hasFullScreenPager(
+    screenHeight: Int,
+    classFilter: (String) -> Boolean = { it.contains("ViewPager") || it.contains("RecyclerView") },
+    ratio: Float = 0.8f
+): Boolean = findAny { n ->
+    val cls = n.className?.toString() ?: return@findAny false
+    if (!classFilter(cls)) return@findAny false
+    val r = android.graphics.Rect()
+    n.getBoundsInScreen(r)
+    screenHeight > 0 && r.height() >= screenHeight * ratio
+}

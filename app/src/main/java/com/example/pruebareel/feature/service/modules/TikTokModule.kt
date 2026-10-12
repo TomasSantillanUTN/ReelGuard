@@ -6,6 +6,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.example.pruebareel.core.lock.LockReason
 import com.example.pruebareel.core.lock.LockTarget
+import com.example.pruebareel.core.utils.clickByLabel
 import com.example.pruebareel.core.utils.findAny
 import com.example.pruebareel.core.utils.looksLikeCommentsSheet
 import com.example.pruebareel.data.preferences.AppSettings
@@ -16,11 +17,11 @@ import com.example.pruebareel.feature.service.ReelGuardService
 /**
  * TikTok: cuenta los videos seguidos y los del día.
  *
- * Detección (heurística, depende del diseño actual de TikTok):
- * - **Estamos en el feed** si se ven las pestañas de arriba ("Para ti" / "Siguiendo",
- *   o "For You" / "Following" si el celular está en inglés).
+ * Detección (heurística, depende del diseño actual de TikTok — ver docs/tiktok_feed.jpeg):
+ * - **Sección de videos (feed)** si se ven las pestañas de arriba ("Para ti" / "Siguiendo",
+ *   o "For You" / "Following"). En Perfil, Mensajes, Amigos, etc. no están, así que esas
+ *   secciones se pueden usar aunque sea horario sin videos.
  * - **Pasó un video** cuando scrollea un contenedor que ocupa casi toda la pantalla.
- *   Así no cuentan los scrolls de la hoja de comentarios, que es más chica.
  *
  * Si no cuenta bien, filtrar Logcat por "ReelGuard-TikTok".
  */
@@ -29,9 +30,12 @@ class TikTokModule(private val host: ReelGuardService) : BlockerModule {
     companion object {
         private const val TAG = "ReelGuard-TikTok"
         private val FEED_TABS = setOf("para ti", "siguiendo", "for you", "following")
+        /** Pestañas de abajo a las que se puede "escapar" del feed. */
+        private val ESCAPE_TABS = setOf("perfil", "profile", "mensajes", "inbox", "bandeja de entrada")
         private const val DEBOUNCE_TIME_MS = 500L
         private const val RESET_GRACE_MS = 3_000L
         private const val FULLSCREEN_RATIO = 0.8f
+        private const val CONTENT_CHECK_INTERVAL_MS = 700L
     }
 
     override val target = LockTarget.TIKTOK
@@ -41,22 +45,33 @@ class TikTokModule(private val host: ReelGuardService) : BlockerModule {
     private var videoCount = 0
     private var lastCountTime = 0L
     private var lastFeedActivityTime = 0L
+    private var lastContentCheck = 0L
 
     override fun isEnabled(settings: AppSettings) = settings.tiktokEnabled
 
     override fun onAppEvent(event: AccessibilityEvent, root: AccessibilityNodeInfo, now: Long) {
         val s = host.settings ?: return
+        val type = event.eventType
 
-        when (event.eventType) {
+        if (type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            if (now - lastContentCheck < CONTENT_CHECK_INTERVAL_MS) return
+            lastContentCheck = now
+        }
+
+        val inFeed = isInFeed(root)
+
+        // Horario sin videos / límite diario: solo se saca al usuario del feed de videos.
+        if (inFeed) {
+            lastFeedActivityTime = now
+            if (host.enforceUsageRules(target, dailyLimitReached(s), ::stillInFeed)) return
+        }
+
+        when (type) {
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 val source = event.source
                 val fullScreen = source != null && isFullScreen(source)
-                val inFeed = isInFeed(root)
                 Log.d(TAG, "scroll: class=${source?.className} fullScreen=$fullScreen inFeed=$inFeed count=$videoCount")
-
                 if (!fullScreen || !inFeed) return
-                lastFeedActivityTime = now
-                if (host.enforceUsageRules(target, dailyLimitReached(s))) return
 
                 if (now - lastCountTime > DEBOUNCE_TIME_MS) {
                     lastCountTime = now
@@ -65,26 +80,31 @@ class TikTokModule(private val host: ReelGuardService) : BlockerModule {
 
                     when {
                         videoCount >= s.tiktokLimit -> host.requestLock(target, LockReason.STREAK)
-                        dailyLimitReached(s) -> host.requestLock(target, LockReason.DAILY_LIMIT)
+                        dailyLimitReached(s) ->
+                            host.kickOutOfSection(target, LockReason.DAILY_LIMIT, ::stillInFeed)
                     }
                 }
             }
 
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                val inFeed = isInFeed(root)
-                if (inFeed || root.looksLikeCommentsSheet()) {
-                    lastFeedActivityTime = now
-                    if (inFeed) host.enforceUsageRules(target, dailyLimitReached(s))
-                } else if (now - lastFeedActivityTime > RESET_GRACE_MS) {
+                // Abrir comentarios / compartir no reinicia el contador.
+                if (!inFeed && !root.looksLikeCommentsSheet() &&
+                    now - lastFeedActivityTime > RESET_GRACE_MS
+                ) {
                     videoCount = 0
                 }
             }
         }
     }
 
+    /** Para salir del feed se toca la pestaña "Perfil" (o "Mensajes"): el resto de TikTok sigue usable. */
+    override fun escapeSection(root: AccessibilityNodeInfo): Boolean = root.clickByLabel(ESCAPE_TABS)
+
     override fun onLocked() {
         videoCount = 0
     }
+
+    private fun stillInFeed(): Boolean = host.rootInActiveWindow?.let { isInFeed(it) } == true
 
     private fun dailyLimitReached(s: AppSettings) =
         s.tiktokDailyLimit > 0 && host.todayStat(StatMetric.TT_VIDEOS) >= s.tiktokDailyLimit

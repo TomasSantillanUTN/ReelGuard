@@ -82,14 +82,10 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
 
         if (inShorts) {
             lastShortsSeenTime = now
-            // Al entrar a Shorts: horario sin videos o límite diario → no se deja ni empezar.
-            if (!wasInShorts) {
-                wasInShorts = true
-                if (host.enforceUsageRules(target, dailyLimitReached(s))) {
-                    host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-                    return
-                }
-            }
+            wasInShorts = true
+            // Horario sin videos / límite diario: se revisa SIEMPRE que se está en Shorts (no solo
+            // al entrar) y solo se saca al usuario de Shorts; el resto de YouTube se puede usar.
+            if (host.enforceUsageRules(target, dailyLimitReached(s), ::stillInShorts)) return
         }
 
         // ---- Conteo ----
@@ -134,18 +130,18 @@ class YoutubeShortsModule(private val host: ReelGuardService) : BlockerModule {
         // Acá se cuenta también el Short que se está por ver (el primero cuenta como 1), así que
         // se bloquea al EMPEZAR el siguiente al límite: con límite 5 se ven 5 Shorts completos,
         // igual que en Reels y TikTok.
-        val reason = when {
-            shortsCount > s.shortsLimit -> LockReason.STREAK
+        when {
+            shortsCount > s.shortsLimit -> {
+                // Se sale de Shorts para que el video deje de reproducirse y se bloquea.
+                host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                host.requestLock(target, LockReason.STREAK)
+            }
             s.shortsDailyLimit > 0 && host.todayStat(StatMetric.YT_SHORTS) > s.shortsDailyLimit ->
-                LockReason.DAILY_LIMIT
-            else -> null
-        }
-        if (reason != null) {
-            // Se sale de Shorts para que el video deje de reproducirse y se bloquea.
-            host.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            host.requestLock(target, reason)
+                host.kickOutOfSection(target, LockReason.DAILY_LIMIT, ::stillInShorts)
         }
     }
+
+    private fun stillInShorts(): Boolean = host.rootInActiveWindow?.let { isShortsScreen(it) } == true
 
     private fun resetSession() {
         if (wasInShorts) Log.d(TAG, "Salió de Shorts: contador a 0")

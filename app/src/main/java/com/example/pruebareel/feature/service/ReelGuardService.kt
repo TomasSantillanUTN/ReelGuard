@@ -1,6 +1,9 @@
 package com.example.pruebareel.feature.service
 
 import android.accessibilityservice.AccessibilityService
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 import com.example.pruebareel.R
@@ -22,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * Único servicio de accesibilidad de ReelGuard.
@@ -30,8 +34,9 @@ import java.util.Calendar
  * un solo servicio y este reparte los eventos a cada [BlockerModule].
  *
  * Lo común vive acá:
- * - La pantalla de bloqueo (un solo overlay para todas las apps).
- * - El horario sin videos y los límites diarios.
+ * - La pantalla de bloqueo con cuenta regresiva (límite de videos seguidos).
+ * - El horario sin videos y los límites diarios: estos NO bloquean la app entera, solo sacan
+ *   al usuario de la sección de videos (Reels / Shorts / feed de TikTok) y muestran un aviso.
  * - Las estadísticas.
  */
 class ReelGuardService : AccessibilityService() {
@@ -169,20 +174,70 @@ class ReelGuardService : AccessibilityService() {
     fun isLocked(target: LockTarget, now: Long = System.currentTimeMillis()): Boolean =
         currentLock(target)?.isActive(now) == true || (overlay.isShowing && overlayTarget == target)
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val lastKick = mutableMapOf<LockTarget, Long>()
+
     /**
-     * Revisa el horario sin videos y el límite diario. Si corresponde, bloquea y devuelve `true`.
-     * Los módulos lo llaman cuando detectan que el usuario está mirando videos.
+     * Revisa el horario sin videos y el límite diario. Si corresponde, saca al usuario de la
+     * sección de videos y devuelve `true`. Los módulos lo llaman SOLO cuando detectan que el
+     * usuario está en la sección de videos; el resto de la app se puede usar normalmente.
+     *
+     * @param stillInSection se consulta 1 s después para ver si la salida funcionó.
      */
-    fun enforceUsageRules(target: LockTarget, dailyLimitReached: Boolean): Boolean {
-        if (isQuietHoursNow()) {
-            requestLock(target, LockReason.QUIET_HOURS)
-            return true
+    fun enforceUsageRules(
+        target: LockTarget,
+        dailyLimitReached: Boolean,
+        stillInSection: () -> Boolean
+    ): Boolean {
+        val reason = when {
+            isQuietHoursNow() -> LockReason.QUIET_HOURS
+            dailyLimitReached -> LockReason.DAILY_LIMIT
+            else -> return false
         }
-        if (dailyLimitReached) {
-            requestLock(target, LockReason.DAILY_LIMIT)
-            return true
+        kickOutOfSection(target, reason, stillInSection)
+        return true
+    }
+
+    /**
+     * Saca al usuario de la sección de videos: primero intenta que el módulo navegue a otra
+     * parte de la app (ej. el perfil en TikTok); si no, "Volver". Si 1 s después sigue en la
+     * sección, va al inicio del celular.
+     */
+    fun kickOutOfSection(target: LockTarget, reason: LockReason, stillInSection: () -> Boolean) {
+        val now = System.currentTimeMillis()
+        val last = lastKick[target] ?: 0L
+        if (now - last < 1_500) return
+        lastKick[target] = now
+        if (now - last > 60_000) addStat(StatMetric.LOCKS) // una vez por "intento", no por cada evento
+
+        Toast.makeText(this, sectionBlockedMessage(target, reason), Toast.LENGTH_LONG).show()
+
+        val module = moduleFor(target)
+        val escaped = rootInActiveWindow?.let { module.escapeSection(it) } == true
+        if (!escaped) performGlobalAction(GLOBAL_ACTION_BACK)
+
+        handler.postDelayed({
+            if (foregroundPackage() in module.packages && stillInSection()) {
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+        }, 1_000)
+    }
+
+    private fun sectionBlockedMessage(target: LockTarget, reason: LockReason): String {
+        val section = when (target) {
+            LockTarget.INSTAGRAM -> "Reels"
+            LockTarget.YOUTUBE -> "Shorts"
+            LockTarget.TIKTOK -> "Videos de TikTok"
         }
-        return false
+        return if (reason == LockReason.QUIET_HOURS) {
+            val end = settings?.quietEndMinute ?: 0
+            getString(
+                R.string.section_blocked_quiet, section,
+                String.format(Locale.US, "%02d:%02d", end / 60, end % 60)
+            )
+        } else {
+            getString(R.string.section_blocked_daily, section)
+        }
     }
 
     /** Activa un bloqueo para [target] y muestra la pantalla si la app está abierta. */
@@ -236,6 +291,14 @@ class ReelGuardService : AccessibilityService() {
     private fun showOverlayIfLocked(target: LockTarget, eventFromTargetApp: Boolean = false) {
         val s = settings ?: return
         val lock = currentLock(target)
+
+        // Versiones anteriores guardaban bloqueos de toda la app por horario / límite diario.
+        // Ahora esos solo afectan a la sección de videos: se borran si quedó alguno.
+        if (lock != null && lock.reason != LockReason.STREAK) {
+            localLocks.remove(target)
+            scope.launch { lockManager.clearLock(target) }
+            return
+        }
 
         if (lock == null || !lock.isActive()) {
             // Venció: se limpia, salvo que la pantalla siga visible esperando que toquen el botón.
